@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Soundlist>
+  <Sound hash="2484486536-458752-703522" url="C:\Program Files (x86)\Steam\steamapps\common\Soundpad\sounds\ba dum tss.mp3" artist="" title="ba dum tss" duration="0:02" addedOn="2025-09-10"/>
+  <Sound hash="2484486536-458752-703500" url="C:\Program Files (x86)\Steam\steamapps\common\Soundpad\sounds\firework.mp3" artist="" title="firework" duration="0:02" addedOn="2025-09-10"/>
+  <Sound hash="2484486536-458752-703523" url="C:\Program Files (x86)\Steam\steamapps\common\Soundpad\sounds\cue.mp3" artist="" title="cue" duration="0:03" addedOn="2025-09-10"/>
+  <Sound hash="2484486536-458752-703516" url="C:\Program Files (x86)\Steam\steamapps\common\Soundpad\sounds\scream.mp3" artist="" title="scream" duration="0:03" addedOn="2025-09-10"/>
+  <Categories>
+    <Category type="1" icon="stock_icon_cat_list" hidden="true"/>
+    <Category name="Meus sons" icon="stock_icon_cat_home">
+      <Sound id="0"/>
+      <Sound id="1"/>
+      <Sound id="2"/>
+      <Sound id="3"/>
+    </Category>
+  </Categories>
+  <Hotbar>
+    <HotbarPage/>
+  </Hotbar>
+</Soundlist>

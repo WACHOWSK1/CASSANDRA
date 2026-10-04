@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #0a0b10;
+    --bg-card: rgba(20, 23, 34, 0.88);
+    --bg-card-hover: rgba(28, 33, 50, 0.95);
+    --bg-panel: #12141c;
+    --bg-overlay: rgba(10, 11, 16, 0.85);
+
+    --border-color: rgba(157, 78, 221, 0.25);
+    --border-bright: rgba(199, 125, 255, 0.5);
+    --border-gold: rgba(224, 169, 109, 0.4);
+
+    --primary-arcane: #9d4edd;
+    --primary-glow: #c77dff;
+    --gold: #e0a96d;
+    --gold-bright: #ffd166;
+    --cyan-mana: #2ec4b6;
+    --cyan-glow: #48cae4;
+    --crimson-danger: #e63946;
+    --crimson-glow: #ff4d6d;
+    --success: #2a9d8f;
+
+    --text-main: #f0f2f5;
+    --text-muted: #9aa0b4;
+    --text-gold: #f3c68f;
+    --text-dim: #6c7287;
+  }
+
+  body {
+    background-color: var(--bg-main);
+    background-image: 
+      radial-gradient(circle at 15% 15%, rgba(157, 78, 221, 0.12) 0%, transparent 40%),
+      radial-gradient(circle at 85% 85%, rgba(230, 57, 70, 0.08) 0%, transparent 45%),
+      radial-gradient(circle at 50% 50%, rgba(46, 196, 182, 0.05) 0%, transparent 60%);
+    background-attachment: fixed;
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(10, 11, 16, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(157, 78, 221, 0.35);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-glow);
+}
+
+/* Equalizer bounce animation */
+@keyframes eqBounce {
+  0% { height: 3px; }
+  100% { height: 14px; }
+}
+
+.animate-eq-1 {
+  animation: eqBounce 0.8s ease-in-out infinite alternate;
+  animation-delay: 0.1s;
+}
+.animate-eq-2 {
+  animation: eqBounce 0.8s ease-in-out infinite alternate;
+  animation-delay: 0.3s;
+}
+.animate-eq-3 {
+  animation: eqBounce 0.8s ease-in-out infinite alternate;
+  animation-delay: 0.2s;
+}
+
+/* Flowchart line animation */
+@keyframes dashAnimation {
+  to { stroke-dashoffset: -24; }
+}
+
+.active-pulse-line {
+  stroke-dasharray: 6, 6;
+  animation: dashAnimation 1.5s linear infinite;
+}
+
+/* Alert Pulse */
+@keyframes alertPulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.alert-pulse-animation {
+  animation: alertPulse 1.2s infinite;
+}

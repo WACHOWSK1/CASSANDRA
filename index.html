@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CASSANDRA: O Resgate e a Ascensão Profana | Painel do Mestre</title>
+    <meta name="description" content="Sistema Tático e Navegador de Decisões Interativo com Zoom/Pan e Player de Músicas para o Mestre de RPG conduzir a sessão Cassandra.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- HEADER SUPERIOR: HUD DO MESTRE -->
+        <header class="top-header">
+            <div class="brand-section">
+                <div class="brand-icon">⚡</div>
+                <div class="brand-text">
+                    <h1>CASSANDRA: O RESGATE</h1>
+                    <span>Painel Tático do Mestre • Tormenta20 / Dark Fantasy</span>
+                </div>
+            </div>
+
+            <!-- HUD CENTRAL: NÍVEL DE ALERTA -->
+            <div class="header-hud">
+                <div class="alert-tracker-widget">
+                    <span class="alert-title">🚨 Nível de Alerta:</span>
+                    <span id="alert-level-label" style="font-family: var(--font-mono); font-weight: 700; font-size: 0.9rem;">Nível 0</span>
+                    <div class="alert-meter" id="alert-meter-container">
+                        <!-- Pips renderizados via JS -->
+                    </div>
+                    <div class="alert-controls">
+                        <button class="btn-icon-xs" title="Reduzir Alerta" onclick="APP.adjustAlert(-1)">-</button>
+                        <button class="btn-icon-xs" title="Aumentar Alerta" onclick="APP.adjustAlert(1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AÇÕES RÁPIDAS DO TOPO -->
+            <div class="header-actions">
+                <button class="btn btn-secondary" title="Voltar para a decisão anterior" onclick="APP.stepBack()">
+                    ↩ Desfazer Passo
+                </button>
+                <button id="btn-toggle-sound" class="btn btn-secondary" onclick="APP.toggleSound()">
+                    🔊 Efeitos: Ativado
+                </button>
+                <button class="btn btn-gold" onclick="APP.exportSummary()">
+                    📜 Exportar Crônica
+                </button>
+                <button class="btn btn-danger" style="padding: 0.45rem 0.75rem;" title="Reiniciar Sessão" onclick="APP.resetState()">
+                    🔄
+                </button>
+            </div>
+        </header>
+
+        <!-- ESPAÇO PRINCIPAL (3 COLUNAS) -->
+        <main class="main-workspace">
+            <!-- COLUNA ESQUERDA: RECURSOS, PROVAS & NPCs -->
+            <aside class="sidebar-left">
+                <!-- RECURSOS E PROVAS -->
+                <div>
+                    <div class="sidebar-section-title">
+                        <span>🎒 Inventário & Provas</span>
+                    </div>
+                    <div id="resources-container">
+                        <!-- Itens renderizados dinamicamente -->
+                    </div>
+                </div>
+
+                <!-- STATUS DOS ALIADOS E NPCs -->
+                <div>
+                    <div class="sidebar-section-title">
+                        <span>👥 Status dos Personagens</span>
+                    </div>
+                    <div id="npcs-container">
+                        <!-- NPCs renderizados dinamicamente -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- COLUNA CENTRAL: PALCO DE CENA, DECISÕES, MAPA INTERATIVO & PLAYER -->
+            <section class="center-stage">
+                <!-- ABAS DE NAVEGAÇÃO ENTRE ATOS & PLAYER DE ÁUDIO -->
+                <div class="stage-tabs">
+                    <button class="tab-btn active" id="tab-act-1" onclick="APP.setActView(1)">Ato I: A Jornada</button>
+                    <button class="tab-btn" id="tab-act-2" onclick="APP.setActView(2)">Ato II: O Resgate</button>
+                    <button class="tab-btn" id="tab-act-3" onclick="APP.setActView(3)">Ato III: A Verdade & Fuga</button>
+                    <button class="tab-btn" id="tab-act-audio" onclick="APP.toggleAudioView()">🎵 Banco de Músicas (32 Categorias)</button>
+                </div>
+
+                <!-- SUGESTÕES DE TRILHA SONORA DA CENA ATUAL -->
+                <div id="scene-ambience-suggestions">
+                    <!-- Chips de ambiência sugerida renderizados dinamicamente -->
+                </div>
+
+                <!-- CARD DA CENA ATUAL (CONDUÇÃO NARRATIVA & DECISÕES) -->
+                <div id="scene-card-container">
+                    <!-- Conteúdo renderizado dinamicamente -->
+                </div>
+
+                <!-- PAINEL COMPLETO DO BANCO DE MÚSICAS (QUANDO ATIVADO) -->
+                <div id="audio-player-full-panel" class="audio-player-panel" style="display: none;">
+                    <div class="sidebar-section-title" style="margin-bottom:0.25rem;">
+                        <span>🎵 Banco de Músicas & Ambiências de RPG (121 Faixas em 32 Pastas)</span>
+                    </div>
+                    
+                    <!-- Busca Rápida -->
+                    <input type="text" class="audio-search-input" placeholder="🔍 Filtrar faixa por nome..." oninput="AUDIO_PLAYER.onSearch(this.value)">
+
+                    <!-- Categorias em Pílulas Roláveis -->
+                    <div class="audio-categories-scroll" id="audio-category-list">
+                        <!-- Categorias renderizadas via JS -->
+                    </div>
+
+                    <!-- Lista de Faixas da Categoria Selecionada -->
+                    <div id="audio-tracks-list">
+                        <!-- Faixas renderizadas via JS -->
+                    </div>
+                </div>
+
+                <!-- VISUALIZADOR DE GRAFO / FLUXOGRAMA COM ZOOM POR SCROLL E PAN ("MÃOZINHA") -->
+                <div class="graph-container-card" id="graph-main-card">
+                    <div class="graph-header">
+                        <span class="sidebar-section-title" style="margin-bottom:0; border:none;">
+                            🗺️ Mapa Tático do Fluxograma (Navegação Visual com Zoom & Arraste)
+                        </span>
+                        <span style="font-size: 0.72rem; color: var(--text-muted);">
+                            Use a <strong>roda do mouse (scroll) para Zoom</strong> • <strong>Clique e arraste (mãozinha) para mover</strong> • Clique em qualquer nó
+                        </span>
+                    </div>
+
+                    <!-- TOOLBAR FLUTUANTE DE ZOOM & CONTROLE -->
+                    <div class="map-zoom-toolbar">
+                        <button class="btn-icon-xs" title="Aumentar Zoom (+)" onclick="GRAPH_ENGINE.zoomIn()">➕</button>
+                        <span class="zoom-indicator" id="zoom-level-indicator">100%</span>
+                        <button class="btn-icon-xs" title="Diminuir Zoom (-)" onclick="GRAPH_ENGINE.zoomOut()">➖</button>
+                        <button class="btn-icon-xs" title="Restaurar Visão Padrão (100%)" onclick="GRAPH_ENGINE.resetView()">⟲</button>
+                        <button class="btn btn-secondary" style="font-size:0.7rem; padding:0.2rem 0.5rem; height:24px;" title="Centralizar no Nó Ativo" onclick="GRAPH_ENGINE.centerOnCurrentNode(APP.state.currentNodeId)">
+                            🎯 Centralizar
+                        </button>
+                    </div>
+
+                    <!-- ÁREA DE VISUALIZAÇÃO INTERATIVA SVG -->
+                    <div class="graph-viewport" id="flowchart-svg-container">
+                        <!-- SVG renderizado via graph.js com suporte a zoom & drag -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- COLUNA DIREITA: ROLADOR DE DADOS & CRÔNICA EM TEMPO REAL -->
+            <aside class="sidebar-right">
+                <!-- ROLADOR DE DADOS INTEGRADO -->
+                <div class="dice-roller-box">
+                    <div class="sidebar-section-title" style="margin-bottom: 0.5rem;">
+                        <span>🎲 Rolador D20 (Tormenta20)</span>
+                    </div>
+                    <div class="dice-controls">
+                        <input type="number" id="dice-mod-input" class="input-mod" value="0" title="Modificador de Perícia / Bônus" placeholder="+0">
+                        <button class="btn btn-primary" style="flex: 1;" onclick="APP.rollD20()">
+                            Rolar d20 + Mod
+                        </button>
+                    </div>
+                    <div class="dice-result-display">
+                        <div class="dice-total" id="dice-total-display">--</div>
+                        <div class="dice-breakdown" id="dice-breakdown-display">Aguardando rolagem...</div>
+                    </div>
+                </div>
+
+                <!-- GUIA RÁPIDO DE CDS DO MESTRE -->
+                <div style="background: rgba(10, 11, 16, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem; font-size: 0.76rem;">
+                    <div style="font-weight: 700; color: var(--gold-bright); margin-bottom: 0.3rem;">⚡ Tabela Rápida de CDs:</div>
+                    <div style="color: var(--text-muted); line-height: 1.4;">
+                        <div>• <strong>CD 15-18:</strong> Desafios Padrão (Furtividade, Greywick)</div>
+                        <div>• <strong>CD 20-22:</strong> Desafios Severos (Mausoléu, Cela, Confronto)</div>
+                        <div>• <strong>CD 24+:</strong> Situações Críticas (Canal s/ Livro, Fuga)</div>
+                        <div>• <strong>CD 30:</strong> Feito Quase Impossível (Força na Cela)</div>
+                    </div>
+                </div>
+
+                <!-- CRÔNICA / TIMELINE DA SESSÃO -->
+                <div class="chronicle-box">
+                    <div class="sidebar-section-title">
+                        <span>📜 Crônica da Sessão</span>
+                    </div>
+                    <div class="chronicle-timeline" id="chronicle-timeline-container">
+                        <!-- Entradas renderizadas via JS -->
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <!-- BARRA FLUTUANTE INFERIOR DO PLAYER DE MÚSICA (SEMPRE ACESSÍVEL) -->
+        <footer class="floating-audio-bar">
+            <!-- Informações da Faixa -->
+            <div class="bottom-track-info">
+                <div class="bottom-track-title" id="audio-current-title">Nenhuma faixa selecionada</div>
+                <div class="bottom-track-category" id="audio-current-category">Selecione uma categoria ou trilha sugerida</div>
+            </div>
+
+            <!-- Controles Centrais & Barra de Progresso -->
+            <div class="bottom-controls-center">
+                <div class="playback-buttons">
+                    <button class="btn-icon-xs" id="audio-shuffle-btn" title="Aleatório: Desativado" onclick="AUDIO_PLAYER.toggleShuffle()">🔀</button>
+                    <button class="btn-icon-xs" title="Faixa Anterior" onclick="AUDIO_PLAYER.prevTrack()">⏮</button>
+                    <button class="play-main-btn" id="audio-play-btn" title="Tocar" onclick="AUDIO_PLAYER.togglePlay()">▶</button>
+                    <button class="btn-icon-xs" title="Próxima Faixa" onclick="AUDIO_PLAYER.nextTrack()">⏭</button>
+                    <button class="btn-icon-xs active-control" id="audio-loop-btn" title="Repetir Faixa: Ativado" onclick="AUDIO_PLAYER.toggleLoop()">🔁</button>
+                </div>
+
+                <div class="audio-progress-bar-container">
+                    <span id="audio-time-current">0:00</span>
+                    <div class="progress-track" onclick="AUDIO_PLAYER.seek(event.offsetX / this.offsetWidth)">
+                        <div class="progress-fill" id="audio-progress-fill"></div>
+                    </div>
+                    <span id="audio-time-total">0:00</span>
+                </div>
+            </div>
+
+            <!-- Volume & Ações -->
+            <div class="bottom-volume-controls">
+                <button class="btn-icon-xs" id="audio-volume-icon" title="Silenciar / Desmutar" onclick="AUDIO_PLAYER.toggleMute()">🔊</button>
+                <input type="range" class="volume-slider" id="audio-volume-slider" min="0" max="1" step="0.05" value="0.7" oninput="AUDIO_PLAYER.setVolume(this.value)">
+            </div>
+        </footer>
+    </div>
+
+    <!-- MODAL GERAL (FICHAS DE NPCs E DETALHES) -->
+    <div id="general-modal" class="modal-backdrop" onclick="if(event.target === this) APP.closeModal()">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-title" class="modal-title">Ficha de Personagem</h3>
+                <button class="btn-icon-xs" onclick="APP.closeModal()">✕</button>
+            </div>
+            <div id="modal-content">
+                <!-- Conteúdo dinâmico do modal -->
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS DO SISTEMA -->
+    <script src="data.js"></script>
+    <script src="audio-data.js"></script>
+    <script src="audio-player.js"></script>
+    <script src="graph.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
