@@ -837,11 +837,11 @@ export const ADVENTURE_NODES: Record<string, AdventureNode> = {
     gmTips: "Varek é um caçador de elite extremamente preparado contra conjuradores: possui RD Fogo 40 e RD Física 5, +9 em todas as resistências contra magias (+20 Fort, +22 Refl, +17 Vont), usa Contramágica Aprimorada (+21) e Aparar Magia com o Machado (+13) para rebater feitiços. Seus ataques são desferidos com Vantagem (Concentração de Combate) e ele pode desferir até 2 ataques do combo Toque Chocante de 12 PM (11d8+13 + 2d8+3d6+7) por turno! CUIDADO: Se cair a 0 PV ou inconsciente, sua Runa de Proteção detona automaticamente como 'homem-bomba' (11d8+13 elétrico em raio de 6m)!",
     combatConfig: {
       enemy: "Varek, o Caçador Arcano",
-      pv: 120,
+      pv: 58,
       defesa: 30,
       thresholds: [
-        { pv: 60, event: "Varek atinge 60 PV e tenta fugir pelo alçapão secreto lançando Amarras Etéreas para cobrir sua retirada." },
-        { pv: 30, event: "Se encurralado aos 30 PV, Varek propõe rendição em troca da vida, entregando sua Máscara e o Contrato de Severian." },
+        { pv: 30, event: "Varek atinge 30 PV (Machucado) e tenta fugir pelo alçapão com Amarras Etéreas cobrindo a retirada." },
+        { pv: 15, event: "Se encurralado aos 15 PV (Crítico), Varek propõe rendição em troca da vida, entregando sua Máscara e o Contrato de Severian." },
         { pv: 0, event: "⚠️ GATILHO RUNA DE PROTEÇÃO (HOMEM-BOMBA): Ao cair a 0 PV ou desmaiar, Varek descarrega 11d8+13 de dano elétrico em área de 6m (Reflexos CD 19 reduz metade)!" }
       ]
     },
@@ -860,15 +860,15 @@ export const ADVENTURE_NODES: Record<string, AdventureNode> = {
       {
         id: "VD_rendido",
         target: "VC",
-        label: "Varek atinge 30 PV ou menos e se rende (Cercado)",
+        label: "Varek atinge 15 PV ou menos e se rende (Cercado)",
         badge: "Rendição de Varek",
         effects: {
           npcStatus: { varek: "rendido" },
           resources: { mascaraVarek: true, contratoSeverian: true },
-          log: "Varek se rendeu aos 30 PV sob ameaça de morte e entregou seus espólios sem detonar a runa."
+          log: "Varek se rendeu aos 15 PV sob ameaça de morte e entregou seus espólios sem detonar a runa."
         }
       },
-      { id: "VD_fuga", target: "VE_FUGA", label: "Varek atinge 60 PV e dispara em fuga pelo alçapão", badge: "Tentativa de Fuga" }
+      { id: "VD_fuga", target: "VE_FUGA", label: "Varek atinge 30 PV e dispara em fuga pelo alçapão", badge: "Tentativa de Fuga" }
     ]
   },
 
@@ -1414,17 +1414,20 @@ export const ADVENTURE_NODES: Record<string, AdventureNode> = {
     act: 2,
     title: "Batalha do Clímax: Severian & Os Pilonos de Khorcova",
     type: "boss_fight",
-    summary: "Gerencie o combate contra Severian (PV 150 + Bônus), os Pilonos Arcanos (RD 10, PV 30 cada), Inversão de Runas e Desejos.",
+    summary: "Gerencie o combate épico contra o Inquisidor-Mor Severian (ND 10-12 Solo, PV 260, PM 75), os 4 Pilonos Arcanos, Ações de Chefe Solo (Repulsa Sacrílega, Comando Rápido), Escudo Sacrifical (1 PV) e Transição para Fase 2.",
     bossConfig: {
       name: "Inquisidor-Mor Severian",
-      basePV: 150,
-      defesa: 28,
+      basePV: 260,
+      defesa: 32,
       mecanicas: [
-        "Pilonos Arcanos: Cada pilono ativo concede RD 5 e regeneração de 10 PV por turno.",
+        "Pilonos Arcanos: Cada pilono ativo concede RD 4 (até RD 15) e cura 10 PV por turno (até 40 PV/rodada).",
+        "Escudo Sacrifical (1 PV Save): Severian não pode morrer enquanto houver pilonos; dano fatal consome 1 pilono e deixa Severian com 1 PV.",
+        "Ações de Chefe Solo: Ao fim do turno de cada herói, Severian pode gastar Ações de Chefe (Repulsa Sacrílega, Comando Rápido CD 25, Passo pelas Sombras).",
+        "Fase 2 (Abaixo de 130 PV): Asas de Cinzas (Voo 12m), Aura de Condenação (3d6 trevas/rodada) e Apocalipse Menor de Ferren (10d10 profano).",
         "Inverter Runas: Teste Misticismo/Ladinagem CD 20 rebate o raio em Severian (4d8 de dano).",
         "Romper Suporte: Atletismo CD 22 ou 30 de dano destrói o pilono.",
         "Desejos de Cassandra: Cassandra concede +4 de ataque ou sobrecarrega um pilono.",
-        "Libertar Aldren: Atletismo/Ladinagem CD 18 o liberta para a luta."
+        "Libertar Aldren: Atletismo/Ladinagem CD 18 o liberta para a luta como aliado valioso."
       ]
     },
     options: [
@@ -2379,118 +2382,157 @@ export const NPC_DATABASE: Record<string, NPCStats> = {
   severian: {
     id: "severian",
     name: "Inquisidor-Mor Severian",
-    role: "Alto Prelado da Inquisição de Khorcova / Boss do Ato II",
+    role: "Alto Prelado de Khorcova / Arauto da Oitava Estrela (Chefe dos Pilonos)",
     category: "antagonista",
     nd: 10,
-    tipo: "Humano Corrompido, Conjurador Divino / Profano",
+    tipo: "Humano Corrompido, Conjurador Divino / Profano (Chefe Solo)",
     tamanho: "Médio",
-    deslocamento: "9m",
-    description: "Alto Prelado que comanda a fortaleza de Milothiann. Utiliza a liturgia inquisitorial para mascarar seu pacto com entidades do abismo e canalizar os 4 Pilonos Arcanos para invocar o avatar de Ferren.",
+    deslocamento: "9m (Fase 1) / Voo 12m (Fase 2)",
+    description: "Alto Prelado que comanda a fortaleza de Milothiann com punho de ferro e oratória fanática. Severian utilizou a liturgia inquisitorial para mascarar seu pacto sombrio com a Oitava Estrela Profana, construindo uma rede de 4 Pilonos Arcanos que drenam a vitalidade dos prisioneiros e anulam a magia dos invasores. Em combate, Severian é uma fortaleza viva: regenera vida a cada rodada, drena mana e vitalidade com seu báculo de mártires, comanda seus oponentes a se ajoelharem e, se levado ao limite, liberta as asas de corvo profanas da Oitava Estrela!",
     atributos: {
       for: 14,
       des: 14,
-      con: 20,
+      con: 22,
       int: 18,
-      sab: 22,
-      car: 18
+      sab: 24,
+      car: 20
     },
     pericias: [
-      { nome: "Religião / Misticismo", mod: 18 },
-      { nome: "Vontade", mod: 17 },
-      { nome: "Iniciativa", mod: 12 },
-      { nome: "Intimidação", mod: 16 },
-      { nome: "Percepção", mod: 14 },
-      { nome: "Luta", mod: 14 }
+      { nome: "Religião / Misticismo", mod: 22 },
+      { nome: "Vontade", mod: 22 },
+      { nome: "Iniciativa", mod: 14 },
+      { nome: "Intimidação", mod: 20 },
+      { nome: "Percepção", mod: 16 },
+      { nome: "Luta", mod: 18 }
     ],
     combatStats: {
-      pv: 150,
-      pm: 60,
-      defesa: 28,
-      iniciativa: 12,
-      rd: "5 por Pilono Ativo (máx RD 20 com 4 pilonos)",
-      sentidos: "Visão no Escuro 18m, Sentir Magia contínuo",
-      resistencias: ["+5 em testes contra dano de Trevas e Fogo", "Imune a Efeitos de Medo e Encantamento"],
+      pv: 260,
+      pm: 75,
+      defesa: 32,
+      iniciativa: 14,
+      rd: "RD 15 (Reduz em -4 por pilono destruído: 15 -> 11 -> 7 -> 3 -> 0)",
+      sentidos: "Visão no Escuro 18m, Sentir Magia contínuo, Percepção às Cegas 9m",
+      resistencias: [
+        "+5 em testes contra efeitos de Trevas, Fogo e Profano",
+        "Imune a Efeitos de Medo, Encantamento Mental e Drenagem de Energia",
+        "Resistência Lendária (3x/dia): Pode gastar 3 PM para passar automaticamente em um teste de resistência falho"
+      ],
+      imunidades: ["Medo", "Encantamento", "Dreno de Energia"],
       ataques: [
         {
-          nome: "Báculo de Ossos Santos & Trevas",
-          teste: "Luta +18 (corpo a corpo ou alcance 18m)",
-          mod: 18,
-          dano: "3d8+10",
+          nome: "💀 Báculo Profano de Ossos Santos & Mártires",
+          teste: "Luta / Ataque Sagrado Profano +22 (corpo a corpo ou alcance 18m)",
+          mod: 22,
+          dano: "3d8+12 de impacto e trevas + Drenar 1d6 PM",
           tipo: "Impacto + Trevas",
           alcance: "18m",
           critico: "19/x3",
-          especial: "Drena 1d4 PM do alvo e cura Severian em valor igual ao dano de trevas."
+          especial: "Cura Severian em PV igual a todo o dano de trevas causado. Se o alvo estiver Caído, sob Medo ou com menos de 50% dos PV, o acerto é um CRÍTICO AUTOMÁTICO (causa 9d8+36 e drena 2d6 PM)!"
         },
         {
-          nome: "Toque do Julgamento Corrompido",
-          teste: "Toque +16",
-          mod: 16,
-          dano: "4d6+8",
+          nome: "✋ Toque do Julgamento Inquisitorial",
+          teste: "Toque +20",
+          mod: 20,
+          dano: "4d6+10 Profano",
           tipo: "Profano",
           alcance: "Corpo a corpo",
           critico: "x2",
-          especial: "Alvo fica Esmorecido (Vontade CD 22 reduz metade)"
+          especial: "Alvo fica Esmorecido e Sangrando (Fortitude CD 25 reduz à metade e evita condições)."
         }
       ],
       magias: [
         {
-          nome: "Julgamento Herético em Cone",
+          nome: "Julgamento Herético em Cone (3º Círculo - 4 PM)",
           custoPM: 4,
-          cd: 22,
-          escola: "Necromancia / Evocação",
-          alcance: "Cone de 9m",
+          cd: 25,
+          escola: "Evocação / Necromancia",
+          alcance: "Cone de 12m",
           duracao: "Instantânea",
-          desc: "Torrente de chamas negras e brasas profanas que causa 6d6+6 de dano de Trevas. Reflexos CD 22 reduz metade."
+          desc: "Torrente avassaladora de chamas negras e brasas profanas que causa 8d6+8 de dano de Trevas e Fogo. Reflexos CD 25 reduz à metade. Alvos que falharem ficam Condenados (sofrem +1d6 de dano de qualquer ataque até o fim da rodada)."
         },
         {
-          nome: "Colunas de Fogo Profano",
-          custoPM: 5,
-          cd: 22,
+          nome: "Colunas de Fogo Profano & Erupção do Abismo (4º Círculo - 6 PM)",
+          custoPM: 6,
+          cd: 25,
           escola: "Evocação",
           alcance: "Longo (90m)",
           duracao: "Instantânea",
-          desc: "Erompe duas colunas de chamas negras em áreas de 3m de raio, causando 5d8 de dano de Fogo/Trevas cada."
+          desc: "Erompe duas colunas colossais de chamas negras de 3m de raio e 15m de altura. Causa 6d8+12 de dano de Fogo/Trevas cada (Reflexos CD 25 reduz metade), ignorando metade da RD a fogo do alvo."
         },
         {
-          nome: "Comando da Inquisição",
+          nome: "Grilhões Litúrgicos de Sangue (3º Círculo - 4 PM)",
+          custoPM: 4,
+          cd: 25,
+          escola: "Invocação / Profano",
+          alcance: "Médio (30m)",
+          duracao: "Sustentada",
+          desc: "Correntes rúnicas de ferro sacrificial irrompem do piso prendendo até 2 heróis. Os alvos ficam Presos e Sufocados (sofrem 3d6 de trevas no início de seus turnos e não podem conjurar magias sem passar em Vontade CD 25)."
+        },
+        {
+          nome: "Comando da Inquisição (2º Círculo - 3 PM)",
           custoPM: 3,
-          cd: 22,
+          cd: 25,
           escola: "Encantamento",
           alcance: "Médio (30m)",
           duracao: "1 rodada",
-          desc: "Força um herói a ajoelhar e largar suas armas ou atacar um companheiro (Vontade CD 22 anula)."
+          desc: "Força um herói a ajoelhar (*Caído*) e largar suas armas ou atacar um companheiro próximo (Vontade CD 25 anula)."
+        },
+        {
+          nome: "Apocalipse Menor de Ferren (Fase 2 - 10 PM, 1x por combate)",
+          custoPM: 10,
+          cd: 25,
+          escola: "Profana Maior",
+          alcance: "Raio de 15m ao redor de Severian",
+          duracao: "Instantânea",
+          desc: "Severian eleva seu báculo aos céus e a Oitava Estrela emana uma supernova de matéria negra cósmica! Causa 10d10 de dano profano em todos os inimigos na arena (Reflexos CD 25 reduz à metade)."
         }
       ],
       habilidades: [
         {
           nome: "Ressonância dos 4 Pilonos Arcanos",
           tipoAcao: "Passiva / Regeneração",
-          desc: "No início de cada um de seus turnos, Severian regenera 10 PV para CADA pilono ativo (até 40 PV/turno se todos os 4 estiverem funcionando) e ganha RD 5 por pilono."
+          desc: "No início de cada turno, Severian regenera 10 PV para CADA pilono ativo (até 40 PV/rodada) e ganha RD 4 por pilono (RD 15 base) e +2 na Defesa por pilono (Defesa 32 base)."
         },
         {
-          nome: "Grito de Convocação dos Acólitos",
-          tipoAcao: "Movimento (Recarga 1d4 rodadas)",
-          desc: "Invoca 2 Soldados Inquisitoriais ou 1 Acólito das sombras para proteger os pilonos."
+          nome: "Escudo de Sacrifício (1 PV Save)",
+          tipoAcao: "Reação Automática",
+          desc: "Enquanto houver pelo menos 1 pilono ativo, quando Severian sofrer um golpe que o reduziria a 0 PV, a rede consome e destrói 1 dos pilonos imediatamente, mantendo Severian vivo com 1 PV!"
         },
         {
-          nome: "Escudo Litúrgico Blasfemo",
-          tipoAcao: "Reação (3 PM)",
-          desc: "Quando atingido por um ataque que cause dano massivo, reduz o dano em 20 usando a energia dos pilonos."
+          nome: "Ação de Chefe 1: Repulsa Sacrílega da Oitava Estrela",
+          tipoAcao: "Ação de Chefe (Fim do turno de um herói)",
+          desc: "Onda de choque profana em raio de 9m: todos os heróis são empurrados 6m para trás e sofrem 3d8+6 de impacto/trevas (Fortitude CD 25 reduz metade e evita empurrão)."
+        },
+        {
+          nome: "Ação de Chefe 2: Comando Rápido da Inquisição (2 PM)",
+          tipoAcao: "Ação de Chefe (Fim do turno de um herói)",
+          desc: "Severian ordena a um herói que caia de joelhos e largue suas armas imediatamente (Vontade CD 25 evita)."
+        },
+        {
+          nome: "Ação de Chefe 3: Passo pelas Sombras dos Pilonos (2 PM)",
+          tipoAcao: "Ação de Chefe (Fim do turno de um herói)",
+          desc: "Teletransporta-se adjacente a qualquer pilono ativo a até 30m e ganha camuflagem leve (20% de chance de falha contra ataques) até seu próximo turno."
+        },
+        {
+          nome: "Fase 2: O Despertar da Oitava Estrela (Aos 50% PV ou ≤1 Pilono)",
+          tipoAcao: "Gatilho de Fase",
+          desc: "Severian queima suas vestes revelando asas etéreas de corvos profanos: ganha Voo 12m, Aura de Condenação (2d6 trevas/rodada para quem estiver a até 9m) e acesso ao 'Apocalipse Menor de Ferren'."
         }
       ]
     },
     equipamentos: [
       "Manto de Seda Carmesim e Ouro da Inquisição",
-      "Báculo de Ossos Santos entalhado com runas proibidas",
-      "Contrato Sombrio de Severian e Confissão de Traição",
-      "Chave Mestra dos Aposentos de Milothiann"
+      "Báculo de Ossos Santos & Mártires (arma mágica lendária com dreno de PM e vida)",
+      "Anel de Foco Sacrificial (+2 na CD de magias divinas)",
+      "Contrato Sombrio de Severian e Confissão de Traição aos Crane",
+      "Chave Mestra dos Aposentos e Celas de Milothiann"
     ],
-    taticas: "Severian luta com total confiança enquanto seus pilonos estiverem ativos. Ele fica no centro da arena disparando o Báculo e Julgamento Herético. Se os heróis começarem a destruir os pilonos, ele foca seus ataques mais destrutivos no herói que estiver atacando os pilonos e usa 'Comando da Inquisição' para desacelerar o grupo.",
+    taticas: "Severian atua como um chefe solo implacável. No início do combate, ele confia na rede de pilonos para absorver dano com RD 15 e regenerar até 40 PV/rodada. Ele usa 'Julgamento Herético' para deixar os heróis Condenados e desfere ataques à distância com o Báculo para drenar PM de conjuradores (como Cassandra ou magos do grupo) e curar sua própria vida. Quando os combatentes corpo a corpo avançam, ele usa sua Ação de Chefe 'Repulsa Sacrílega' para arremessá-los longe ou 'Passo pelas Sombras' para reposicionar-se. Se os heróis destruírem seus pilonos ou ele atingir 50% de PV, Severian entra na Fase 2: levita no ar com asas de corvo profano e desfere o 'Apocalipse Menor de Ferren'!",
     roleplay: {
-      personalidade: "Arrogante, frio, com retórica religiosa fervorosa usada para mascarar ambição desmedida de poder.",
-      motivacao: "Sacrificar Cassandra no alinhamento dos pilonos para alcançar a imortalidade como arauto de Ferren.",
-      citacao: "'Vocês chamam isso de heresia? Eu chamo de salvação! O sangue dos Crane acenderá a chama da verdadeira ordem!'",
-      notasMestre: "Destaque a regeneração de PV a cada rodada para incentivar os jogadores a destruírem os pilonos com atletismo/misticismo ou usarem a Inversão de Runas de Cassandra."
+      personalidade: "Fanático, calculista, implacável e dotado de uma soberba dogmática inabalável. Vê o sacrifício de Cassandra como um dever cósmico.",
+      motivacao: "Concluir o ritual da Oitava Estrela para alcançar a apoteose como sumo sacerdote imortal do novo panteão.",
+      citacao: "'Vocês não compreendem o peso da coroa de mártires! Cassandra não é uma garota... ela é a chave que abrirá as portas da verdadeira divindade!'",
+      notasMestre: "Deixe claro aos jogadores que atacar Severian diretamente enquanto os 4 pilonos estiverem ativos é um erro quase fatal devido à RD 15 e Regeneração 40 PV/rodada. Incentive os jogadores a utilizarem Atletismo para destruir os pilonos ou Misticismo com Cassandra para Inverter as Runas e rebater o poder de volta nele!"
     }
   },
 

@@ -24,13 +24,17 @@ import {
 export const VarekCombatArena: React.FC = () => {
   const { chooseOption, jumpToNode, rollDice } = useAdventureStore();
 
-  // Escala de Combate: 58 PV (Ficha Oficial T20) ou 120 PV (Boss Tático de Encontro)
-  const [bossScale, setBossScale] = useState<'oficial' | 'boss'>('boss');
+  // Escala de Combate: 58 PV (Ficha Oficial T20 - Padrão) ou 120 PV (Modo Boss Expandido)
+  const [bossScale, setBossScale] = useState<'oficial' | 'boss'>('oficial');
   const maxPV = bossScale === 'boss' ? 120 : 58;
   const maxPM = 58;
 
-  const [currentPV, setCurrentPV] = useState<number>(maxPV);
-  const [currentPM, setCurrentPM] = useState<number>(maxPM);
+  // Limiares de Gatilho Calibrados para o PV Atual (58 PV -> Fuga aos 30 PV / Rendição aos 15 PV)
+  const fugaThreshold = bossScale === 'boss' ? 60 : 30;
+  const rendicaoThreshold = bossScale === 'boss' ? 30 : 15;
+
+  const [currentPV, setCurrentPV] = useState<number>(58);
+  const [currentPM, setCurrentPM] = useState<number>(58);
   const [emboscadaAtiva, setEmboscadaAtiva] = useState<boolean>(true);
   const [concentracaoAtiva, setConcentracaoAtiva] = useState<boolean>(true);
   const [lastActionLog, setLastActionLog] = useState<{
@@ -304,11 +308,12 @@ export const VarekCombatArena: React.FC = () => {
             />
           </div>
           <div className="flex items-center gap-1 text-[10px] font-mono">
-            <button onClick={() => handleModifyPV(-25)} className="px-2 py-0.5 bg-black/40 hover:bg-rose-900 border border-white/10 rounded">-25</button>
+            <button onClick={() => handleModifyPV(-20)} className="px-2 py-0.5 bg-black/40 hover:bg-rose-900 border border-white/10 rounded">-20</button>
             <button onClick={() => handleModifyPV(-10)} className="px-2 py-0.5 bg-black/40 hover:bg-rose-900 border border-white/10 rounded">-10</button>
             <button onClick={() => handleModifyPV(-5)} className="px-2 py-0.5 bg-black/40 hover:bg-rose-900 border border-white/10 rounded">-5</button>
             <button onClick={() => handleModifyPV(5)} className="px-2 py-0.5 bg-black/40 hover:bg-emerald-900 border border-white/10 rounded">+5</button>
-            <button onClick={() => handleModifyPV(15)} className="px-2 py-0.5 bg-black/40 hover:bg-emerald-900 border border-white/10 rounded">+15</button>
+            <button onClick={() => handleModifyPV(10)} className="px-2 py-0.5 bg-black/40 hover:bg-emerald-900 border border-white/10 rounded">+10</button>
+            <button onClick={() => setCurrentPV(maxPV)} className="px-2 py-0.5 bg-black/40 hover:bg-emerald-900 border border-emerald-500/30 rounded text-emerald-300">Full</button>
           </div>
         </div>
 
@@ -338,19 +343,19 @@ export const VarekCombatArena: React.FC = () => {
         </div>
       </div>
 
-      {/* GATILHOS TÁTICOS ATIVOS (60 PV, 30 PV, 0 PV) */}
+      {/* GATILHOS TÁTICOS ATIVOS CALIBRADOS (Fuga aos 30 PV, Rendição aos 15 PV, Homem-Bomba aos 0 PV) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
         <div className={`p-2 rounded-xl border flex flex-col justify-between transition-all ${
-          currentPV <= 60 && currentPV > 30 
+          currentPV <= fugaThreshold && currentPV > rendicaoThreshold 
             ? 'bg-amber-950/70 border-amber-500 text-amber-200 alert-pulse-animation' 
             : 'bg-black/30 border-white/5 text-gray-400'
         }`}>
           <div className="font-bold text-[11px] flex items-center gap-1">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-            <span>Gatilho 60 PV (Tentativa de Fuga)</span>
+            <span>Gatilho {fugaThreshold} PV (Tentativa de Fuga)</span>
           </div>
           <span className="text-[10px] text-gray-300 mt-1">
-            Varek tenta abrir o alçapão com Amarras Etéreas para cobrir a retirada.
+            Ao atingir {fugaThreshold} PV (metade da vida), Varek tenta abrir o alçapão com Amarras Etéreas para cobrir a retirada.
           </span>
           <button 
             onClick={() => chooseOption('VD_fuga')}
@@ -361,16 +366,16 @@ export const VarekCombatArena: React.FC = () => {
         </div>
 
         <div className={`p-2 rounded-xl border flex flex-col justify-between transition-all ${
-          currentPV <= 30 && currentPV > 0 
+          currentPV <= rendicaoThreshold && currentPV > 0 
             ? 'bg-purple-950/70 border-purple-500 text-purple-200 alert-pulse-animation' 
             : 'bg-black/30 border-white/5 text-gray-400'
         }`}>
           <div className="font-bold text-[11px] flex items-center gap-1">
             <Lock className="w-3.5 h-3.5 text-purple-400" />
-            <span>Gatilho 30 PV (Rendição / Cercado)</span>
+            <span>Gatilho {rendicaoThreshold} PV (Rendição / Cercado)</span>
           </div>
           <span className="text-[10px] text-gray-300 mt-1">
-            Se cercado, Varek solta o machado e oferece a Máscara e o Contrato.
+            Se cercado aos {rendicaoThreshold} PV (crítico), Varek solta o machado e oferece a Máscara e o Contrato para sobreviver.
           </span>
           <button 
             onClick={() => chooseOption('VD_rendido')}

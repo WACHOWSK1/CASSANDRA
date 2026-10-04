@@ -996,11 +996,11 @@ const ADVENTURE_DATA = {
             narration: "A ilusão se desfaz em centelhas douradas e fumaça fria! Varek empunha seu machado de batalha rúnico e ergue o escudo pesado com os raios solares de Azgher gravados no metal. Faíscas elétricas de alta voltagem crepitam ao longo do fio da lâmina enquanto ele fecha a passagem: 'Severian me pagou muito bem para garantir que ninguém saia vivo deste corredor. Vocês não passarão!'",
             combatConfig: {
                 enemy: "Varek, o Caçador Arcano",
-                pv: 120,
+                pv: 58,
                 defesa: 30,
                 thresholds: [
-                    { pv: 60, event: "Varek atinge 60 PV e tenta fugir pelo alçapão secreto lançando Amarras Etéreas para cobrir sua retirada." },
-                    { pv: 30, event: "Se encurralado aos 30 PV, Varek propõe rendição em troca da vida, entregando sua Máscara e o Contrato de Severian." },
+                    { pv: 30, event: "Varek atinge 30 PV (Machucado) e tenta fugir pelo alçapão secreto lançando Amarras Etéreas para cobrir sua retirada." },
+                    { pv: 15, event: "Se encurralado aos 15 PV (Crítico), Varek propõe rendição em troca da vida, entregando sua Máscara e o Contrato de Severian." },
                     { pv: 0, event: "⚠️ GATILHO RUNA DE PROTEÇÃO (HOMEM-BOMBA): Ao cair a 0 PV ou desmaiar, Varek descarrega 11d8+13 de dano elétrico em área de 6m (Reflexos CD 19 reduz metade)!" }
                 ]
             },
@@ -1019,18 +1019,18 @@ const ADVENTURE_DATA = {
                 {
                     id: "VD_rendido",
                     target: "VC",
-                    label: "Varek atinge 30 PV ou menos e se rende (Cercado)",
+                    label: "Varek atinge 15 PV ou menos e se rende (Cercado)",
                     badge: "Rendição de Varek",
                     effects: {
                         npcStatus: { varek: "rendido" },
                         resources: { mascaraVarek: true, contratoSeverian: true },
-                        log: "Varek se rendeu aos 30 PV sob ameaça de morte e entregou seus espólios sem detonar a runa."
+                        log: "Varek se rendeu aos 15 PV sob ameaça de morte e entregou seus espólios sem detonar a runa."
                     }
                 },
                 {
                     id: "VD_fuga",
                     target: "VE_FUGA",
-                    label: "Varek atinge 60 PV e dispara em fuga pelo alçapão",
+                    label: "Varek atinge 30 PV e dispara em fuga pelo alçapão",
                     badge: "Tentativa de Fuga"
                 }
             ]
@@ -2395,16 +2395,24 @@ const ADVENTURE_DATA = {
         },
         severian: {
             name: "Inquisidor-Mor Severian",
-            role: "Alto Prelado da Inquisição de Khorcova",
-            description: "Fanático ambicioso que usa a liturgia para encobrir seus rituais sombrios. Manipula correntes de mana profana e os Pilonos de Milothiann.",
+            role: "Alto Prelado de Khorcova / Arauto da Oitava Estrela (Chefe dos Pilonos - ND 10)",
+            description: "Chefe Solo épico de ND 10-12. Conjurador Divino e Profano supremo. Possui 260 PV, 75 PM, Defesa 32 (com 4 pilonos), RD 15 e Regeneração 40 PV/rodada. Empunha o Báculo de Ossos Santos que drena PM e vida com crítico automático em alvos machucados, casta Julgamento Herético e Colunas de Fogo Profano, possui Ações de Chefe Solo (Repulsa Sacrílega e Comando Rápido), Escudo de Sacrifício ('1 PV Save') e entra em Fase 2 com asas de corvo aos 50% de PV.",
             combatStats: {
-                pv: 150,
-                defesa: 28,
-                rd: "5 por pilono ativo",
+                pv: 260,
+                pm: 75,
+                defesa: 32,
+                iniciativa: 14,
+                rd: "RD 15 (Reduz em -4 por pilono destruído: 15 -> 11 -> 7 -> 3 -> 0)",
                 habilidades: [
-                    "Báculo de Ossos Santos (+18 corpo a corpo ou à distância, 3d8+10 trevas/essência).",
-                    "Ressonância dos Pilonos: Regenera 10 PV por turno para cada pilono em funcionamento.",
-                    "Julgamento Herético (Padrão, 4 PM): Explosão de chamas negras em cone de 9m (6d6 trevas, Reflexos CD 22 metade)."
+                    "💀 Báculo dos Mártires (+22 ataque, 3d8+12 trevas + drena 1d6 PM e cura vida; Crítico auto em alvos com <50% PV).",
+                    "🔮 Julgamento Herético em Cone (4 PM, CD 25): 8d6+8 de trevas e fogo em cone de 12m, deixando alvos Condenados.",
+                    "🔥 Colunas de Fogo Profano (6 PM, CD 25): 6d8+12 em área, ignorando metade de qualquer RD elemental.",
+                    "⚡ Ação de Chefe: Repulsa Sacrílega (Fim de turno do herói): Empurra 6m e causa 3d8+6 de impacto/trevas em raio de 9m.",
+                    "👁️ Ação de Chefe: Comando Rápido (2 PM, CD 25 Vontade): Força o herói a ajoelhar (*Caído*) ou largar suas armas.",
+                    "🌫️ Ação de Chefe: Passo pelas Sombras (2 PM): Teletransporta-se para junto de qualquer pilono ativo.",
+                    "✦ Escudo de Sacrifício: Se sofrer dano letal enquanto houver pilonos ativos, destrói 1 pilono para sobreviver com 1 PV!",
+                    "✦ Regeneração dos Pilonos: Regenera 10 PV por turno para cada pilono em funcionamento (até 40 PV/rodada).",
+                    "✦ Fase 2 (Despertar da Oitava Estrela): Ganha Voo 12m, Aura de Condenação e acesso ao Apocalipse Menor de Ferren (10d10 profano)!"
                 ]
             }
         },
