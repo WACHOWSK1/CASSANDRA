@@ -11,7 +11,10 @@ import {
   Scroll, 
   Plus, 
   Minus,
-  AlertTriangle
+  AlertTriangle,
+  Users,
+  BookOpen,
+  Package
 } from 'lucide-react';
 
 export const TopHeader: React.FC = () => {
@@ -23,6 +26,9 @@ export const TopHeader: React.FC = () => {
     soundEnabled, 
     toggleSound, 
     setExportModalOpen, 
+    openNPCModal,
+    openItemModal,
+    setActiveRightTab,
     history 
   } = useAdventureStore();
 
@@ -49,9 +55,13 @@ export const TopHeader: React.FC = () => {
         </div>
       </div>
 
-      {/* HUD Central: Medidor de Alerta */}
-      <div className="flex items-center gap-3 bg-[#0a0b10]/80 px-4 py-1 rounded-full border border-[#9d4edd]/30">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-[#9aa0b4] uppercase">
+      {/* HUD Central: Medidor de Alerta (Clique para abrir painel de Alertas) */}
+      <div 
+        onClick={() => setActiveRightTab('alertas')}
+        className="flex items-center gap-3 bg-[#0a0b10]/90 px-4 py-1.5 rounded-full border border-[#9d4edd]/40 cursor-pointer hover:border-[#ffd166] transition-all shadow-md group"
+        title="Clique para ver consequências detalhadas do Alerta no painel direito"
+      >
+        <div className="flex items-center gap-1.5 text-xs font-bold text-[#9aa0b4] uppercase group-hover:text-[#ffd166]">
           <AlertTriangle className={`w-4 h-4 ${getAlertColor()}`} />
           <span>Alerta:</span>
         </div>
@@ -59,9 +69,9 @@ export const TopHeader: React.FC = () => {
           Nível {alertLevel}
         </span>
         
-        {/* Pips de Alerta 0-5 */}
+        {/* Pips de Alerta 0-6 */}
         <div className="flex items-center gap-1">
-          {[0, 1, 2, 3, 4, 5].map((level) => {
+          {[0, 1, 2, 3, 4, 5, 6].map((level) => {
             const isFilled = level <= alertLevel;
             let bgClass = "bg-[#252836] border-[#3c4055]";
             if (isFilled) {
@@ -81,18 +91,26 @@ export const TopHeader: React.FC = () => {
         </div>
 
         {/* Controles de Alerta */}
-        <div className="flex gap-1 ml-1">
+        <div className="flex gap-1 ml-1" onClick={(e) => e.stopPropagation()}>
           <button 
-            onClick={() => adjustAlert(-1)} 
-            className="w-5 h-5 rounded bg-white/10 hover:bg-[#9d4edd] text-white flex items-center justify-center text-xs transition-colors"
-            title="Reduzir Alerta"
+            onClick={() => {
+              adjustAlert(-1);
+              setActiveRightTab('alertas');
+            }} 
+            disabled={alertLevel <= 0}
+            className="w-5 h-5 rounded bg-white/10 hover:bg-[#9d4edd] text-white flex items-center justify-center text-xs transition-colors disabled:opacity-30"
+            title="Reduzir Alerta (-1)"
           >
             <Minus className="w-3 h-3" />
           </button>
           <button 
-            onClick={() => adjustAlert(1)} 
-            className="w-5 h-5 rounded bg-white/10 hover:bg-[#9d4edd] text-white flex items-center justify-center text-xs transition-colors"
-            title="Aumentar Alerta"
+            onClick={() => {
+              adjustAlert(1);
+              setActiveRightTab('alertas');
+            }} 
+            disabled={alertLevel >= 6}
+            className="w-5 h-5 rounded bg-white/10 hover:bg-[#9d4edd] text-white flex items-center justify-center text-xs transition-colors disabled:opacity-30"
+            title="Aumentar Alerta (+1)"
           >
             <Plus className="w-3 h-3" />
           </button>
@@ -101,6 +119,33 @@ export const TopHeader: React.FC = () => {
 
       {/* Ações do Mestre */}
       <div className="flex items-center gap-2">
+        <button 
+          onClick={() => openNPCModal('cassandra')}
+          className="px-3 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-[#9d4edd] to-[#5a189a] hover:from-[#c77dff] hover:to-[#9d4edd] text-white flex items-center gap-1.5 shadow-[0_0_12px_rgba(157,78,221,0.4)] border border-[#ffd166]/40 transition-all"
+          title="Abrir Compêndio de Fichas dos Personagens (12 Fichas T20)"
+        >
+          <Users className="w-3.5 h-3.5 text-[#ffd166]" />
+          <span>Fichas T20</span>
+        </button>
+
+        <button 
+          onClick={() => openItemModal('ordem_helena')}
+          className="px-3 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-[#e0a96d]/40 to-[#996515]/60 hover:from-[#ffd166]/60 hover:to-[#e0a96d]/60 text-white flex items-center gap-1.5 shadow-[0_0_12px_rgba(255,209,102,0.3)] border border-[#ffd166]/50 transition-all"
+          title="Abrir Compêndio de Itens, Documentos e Artefatos (24 Itens T20)"
+        >
+          <Package className="w-3.5 h-3.5 text-[#ffd166]" />
+          <span>Itens & Artefatos</span>
+        </button>
+
+        <button 
+          onClick={() => setActiveRightTab('documentos')}
+          className="px-3 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-[#2a9d8f] to-[#264653] hover:from-[#2ec4b6] hover:to-[#2a9d8f] text-white flex items-center gap-1.5 shadow-[0_0_12px_rgba(42,157,143,0.4)] border border-[#48cae4]/40 transition-all"
+          title="Consultar Documentos de Regras (Alerta e Antimagia)"
+        >
+          <BookOpen className="w-3.5 h-3.5 text-amber-300" />
+          <span>Regras T20</span>
+        </button>
+
         <button 
           onClick={stepBack}
           disabled={history.length <= 1}
@@ -126,14 +171,6 @@ export const TopHeader: React.FC = () => {
               <span className="text-gray-500">Mudo</span>
             </>
           )}
-        </button>
-
-        <button 
-          onClick={() => setExportModalOpen(true)}
-          className="px-3 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-[#d4af37] to-[#996515] hover:from-[#ffd166] hover:to-[#d4af37] text-gray-950 flex items-center gap-1.5 shadow-[0_0_12px_rgba(255,209,102,0.4)] transition-all"
-        >
-          <Scroll className="w-3.5 h-3.5" />
-          <span>Crônica</span>
         </button>
 
         <button 

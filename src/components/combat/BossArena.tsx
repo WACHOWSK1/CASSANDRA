@@ -2,92 +2,162 @@
 
 import React from 'react';
 import { useAdventureStore } from '@/store/useAdventureStore';
-import { Shield, Zap, Flame, Swords } from 'lucide-react';
+import { 
+  Flame, 
+  ShieldAlert, 
+  Sparkles, 
+  RotateCcw, 
+  Hammer, 
+  Heart, 
+  Zap, 
+  Swords, 
+  CheckCircle2, 
+  AlertTriangle 
+} from 'lucide-react';
 
 export const BossArena: React.FC = () => {
   const { 
-    bossState, 
+    pylonsList, 
+    setPylonStatus, 
     destruirPilono, 
     inverterRunas, 
-    togglePylonManual 
+    bossState 
   } = useAdventureStore();
 
-  const total = bossState.totalPilonos || 4;
-  const destroyed = bossState.pilonosDestruidos || 0;
-  const activePylons = Math.max(0, total - destroyed);
-  const severianTotalPV = 150 + bossState.severianBonusPV;
-  const rd = activePylons * 5;
-  const regen = activePylons * 10;
+  const activeCount = pylonsList.filter(p => p.status === 'ativo').length;
+  const destroyedCount = 4 - activeCount;
+
+  // Estatísticas dinâmicas de Severian baseadas nos pilonos
+  const baseDefesa = 32;
+  const baseRD = 15;
+  const currentDefesa = Math.max(22, baseDefesa - destroyedCount * 2);
+  const currentRD = Math.max(0, baseRD - destroyedCount * 4);
 
   return (
-    <div className="bg-[#e63946]/[0.08] border border-[#e63946]/40 rounded-xl p-3.5 my-3 shadow-2xl">
-      {/* Header do Boss */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <Swords className="w-5 h-5 text-[#ff4d6d]" />
-          <h3 className="font-serif font-bold text-sm text-[#ff4d6d]">
-            Confronto Final: Inquisidor-Mor Severian
-          </h3>
-        </div>
-        <div className="flex items-center gap-2 text-xs font-mono text-[#ffd166]">
-          <span>PV: <strong>{severianTotalPV}</strong></span>
-          <span>•</span>
-          <span>Defesa: <strong>28</strong></span>
-        </div>
-      </div>
-
-      <div className="bg-[#0a0b10]/60 p-2 rounded-lg border border-white/5 mb-3 flex items-center justify-between text-xs text-gray-300">
-        <div className="flex items-center gap-1.5">
-          <Shield className="w-4 h-4 text-[#c77dff]" />
-          <span>Pilonos Ativos: <strong className="text-[#c77dff]">{activePylons}/{total}</strong></span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-amber-300">RD {rd}</span>
-          <span className="text-cyan-300">Regeneração {regen} PV/turno</span>
-        </div>
-      </div>
-
-      {/* Grid de Pilonos */}
-      <div className="grid grid-cols-4 gap-2 mb-3">
-        {Array.from({ length: total }).map((_, i) => {
-          const pylonIndex = i + 1;
-          const isDestroyed = pylonIndex <= destroyed;
-          return (
-            <div 
-              key={pylonIndex}
-              onClick={() => togglePylonManual(pylonIndex)}
-              className={`p-2 rounded-lg border text-center cursor-pointer transition-all ${
-                isDestroyed
-                  ? 'bg-black/40 border-gray-700 opacity-50 line-through text-gray-500'
-                  : 'bg-[#9d4edd]/20 border-[#c77dff] shadow-[0_0_12px_rgba(157,78,221,0.3)] text-white'
-              }`}
-            >
-              <div className="font-bold text-xs">Pilono {pylonIndex}</div>
-              <div className="text-[10px] uppercase font-mono mt-0.5">
-                {isDestroyed ? 'Destruído' : 'Ativo'}
-              </div>
+    <div className="bg-[#120e1c]/95 border-2 border-[#9d4edd]/60 rounded-2xl p-4 shadow-[0_0_30px_rgba(157,78,221,0.3)] space-y-4 my-2">
+      {/* HEADER DA ARENA DO CHEFE */}
+      <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#9d4edd] to-[#e63946] flex items-center justify-center text-white shadow-lg">
+            <Swords className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-serif font-bold text-base text-white">
+                Arena da Oitava Estrela: Severian de Khorcova
+              </h3>
+              <span className="bg-rose-950/60 border border-rose-500 text-rose-300 px-2 py-0.5 rounded text-[10px] font-mono font-bold">
+                ND 12 (Solo)
+              </span>
             </div>
-          );
-        })}
+            <span className="text-[10px] text-gray-400">
+              Confronto Tático • Rede Antimagia & Sacrifício Ritualístico
+            </span>
+          </div>
+        </div>
+
+        {/* Indicador de Status dos Pilonos */}
+        <div className="flex items-center gap-1.5 font-mono text-xs">
+          <span className={`px-2.5 py-1 rounded-full border font-bold ${
+            activeCount === 0
+              ? 'bg-emerald-950/50 text-emerald-300 border-emerald-500'
+              : 'bg-rose-950/50 text-rose-300 border-rose-500 alert-pulse-animation'
+          }`}>
+            {activeCount > 0 ? `${activeCount} / 4 Pilonos Ativos` : '✦ Rede Antimagia Destruída!'}
+          </span>
+        </div>
       </div>
 
-      {/* Ações Táticas Rápidas */}
-      <div className="flex gap-2">
-        <button 
+      {/* PAINEL DINÂMICO DE SEVERIAN */}
+      <div className="bg-[#1a1426] border border-[#9d4edd]/30 rounded-xl p-3.5 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
+        <div className="bg-black/40 p-2 rounded-lg border border-white/5">
+          <span className="text-[10px] text-gray-400 uppercase block font-semibold">Defesa Atual</span>
+          <strong className="text-sm font-mono text-[#ffd166]">{currentDefesa}</strong>
+          <span className="text-[9px] text-gray-400 block">{destroyedCount > 0 ? `(-${destroyedCount * 2})` : '(Base 32)'}</span>
+        </div>
+
+        <div className="bg-black/40 p-2 rounded-lg border border-white/5">
+          <span className="text-[10px] text-gray-400 uppercase block font-semibold">Redução de Dano</span>
+          <strong className="text-sm font-mono text-[#48cae4]">RD {currentRD}</strong>
+          <span className="text-[9px] text-gray-400 block">{destroyedCount > 0 ? `(-${destroyedCount * 4})` : '(Base 15)'}</span>
+        </div>
+
+        <div className="bg-black/40 p-2 rounded-lg border border-white/5">
+          <span className="text-[10px] text-gray-400 uppercase block font-semibold">Escudo de Sacrifício</span>
+          <strong className="text-xs font-mono text-[#ff758f] block mt-0.5">
+            {activeCount > 0 ? '1 PV Save Ativo' : 'Vulnerável'}
+          </strong>
+          <span className="text-[9px] text-gray-400 block">Consome 1 pilono p/ não morrer</span>
+        </div>
+
+        <div className="bg-black/40 p-2 rounded-lg border border-white/5">
+          <span className="text-[10px] text-gray-400 uppercase block font-semibold">Regeneração</span>
+          <strong className="text-xs font-mono text-emerald-300 block mt-0.5">
+            {activeCount > 0 ? `${activeCount * 5} PV / rodada` : 'Desativada'}
+          </strong>
+          <span className="text-[9px] text-gray-400 block">Alimentada pela rede</span>
+        </div>
+      </div>
+
+      {/* BOTÕES DE INTERAÇÃO RÁPIDA DE COMBATE */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <button
           onClick={destruirPilono}
-          className="flex-1 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-[#9d4edd] to-[#5a189a] hover:from-[#c77dff] hover:to-[#9d4edd] text-white flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(157,78,221,0.4)] transition-all"
+          className="p-3 rounded-xl bg-gradient-to-r from-rose-900/60 to-rose-950/80 hover:from-rose-800/80 hover:to-rose-900 border border-rose-500/50 text-white flex items-center justify-between shadow transition-all"
         >
-          <Flame className="w-3.5 h-3.5 text-amber-300" />
-          <span>Destruir 1 Pilono (-RD 5, -Regen 10)</span>
+          <div className="flex items-center gap-2 text-left">
+            <Hammer className="w-5 h-5 text-rose-300" />
+            <div>
+              <strong className="text-xs block">💥 Destruir Próximo Pilono</strong>
+              <span className="text-[10px] text-rose-200/80">Reduz Defesa (-2) e RD (-4) de Severian</span>
+            </div>
+          </div>
+          <span className="font-mono text-xs text-rose-300 font-bold">Ação</span>
         </button>
 
-        <button 
+        <button
           onClick={inverterRunas}
-          className="flex-1 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-[#d4af37] to-[#996515] hover:from-[#ffd166] hover:to-[#d4af37] text-gray-950 flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(255,209,102,0.4)] transition-all"
+          className="p-3 rounded-xl bg-gradient-to-r from-[#2ec4b6]/30 to-[#0f2824] hover:from-[#2ec4b6]/50 border border-[#2ec4b6]/50 text-white flex items-center justify-between shadow transition-all"
         >
-          <Zap className="w-3.5 h-3.5" />
-          <span>Inverter Runas (4d8 Dano no Boss)</span>
+          <div className="flex items-center gap-2 text-left">
+            <Sparkles className="w-5 h-5 text-[#48cae4]" />
+            <div>
+              <strong className="text-xs block">🔮 Inverter Runas do Pilono</strong>
+              <span className="text-[10px] text-emerald-200/80">Causa 10-35 dano em Severian & cria refúgio</span>
+            </div>
+          </div>
+          <span className="font-mono text-xs text-[#48cae4] font-bold">Misticismo</span>
         </button>
+      </div>
+
+      {/* ESTADO INDIVIDUAL DOS 4 PILONOS */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {pylonsList.map((pylon) => (
+          <div 
+            key={pylon.id}
+            className={`p-2.5 rounded-xl border flex flex-col gap-1 transition-all ${
+              pylon.status === 'ativo'
+                ? 'bg-rose-950/40 border-rose-500/40 text-rose-200'
+                : pylon.status === 'invertido'
+                ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200'
+                : 'bg-black/40 border-white/5 text-gray-500'
+            }`}
+          >
+            <div className="flex items-center justify-between text-[10px] font-mono">
+              <span className="font-bold">Pilono #{pylon.id}</span>
+              <span className="capitalize">{pylon.status}</span>
+            </div>
+            <strong className="text-xs text-white truncate">{pylon.nome}</strong>
+            <div className="flex gap-1 mt-1">
+              <button
+                onClick={() => setPylonStatus(pylon.id, pylon.status === 'ativo' ? 'destruido' : 'ativo')}
+                className="w-full py-0.5 rounded text-[9px] bg-white/10 hover:bg-white/20 text-white font-semibold transition-all"
+              >
+                {pylon.status === 'ativo' ? 'Desativar' : 'Reativar'}
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

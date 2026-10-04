@@ -1,23 +1,32 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAdventureStore } from '@/store/useAdventureStore';
 import { useAudioStore } from '@/store/useAudioStore';
+import { ADVENTURE_NODES, ADVENTURE_ACTS } from '@/data/adventureData';
 import { ChallengeSimulator } from '@/components/challenge/ChallengeSimulator';
 import { BossArena } from '@/components/combat/BossArena';
+import { VarekCombatArena } from '@/components/combat/VarekCombatArena';
 import { 
   BookOpen, 
   Lightbulb, 
   ArrowRight, 
   Music, 
-  Volume2
+  Volume2, 
+  Compass, 
+  ListTree, 
+  Zap, 
+  ExternalLink,
+  ChevronRight
 } from 'lucide-react';
 
 export const SceneCard: React.FC = () => {
-  const { getCurrentNode, chooseOption, currentChallenge } = useAdventureStore();
+  const { getCurrentNode, chooseOption, jumpToNode, currentChallenge, actView, setActView } = useAdventureStore();
   const { suggestedCategories, playFirstOfCategory, currentCategory, isPlaying, suggestAmbienceForNode } = useAudioStore();
+  const [showNodeSelector, setShowNodeSelector] = useState(false);
 
   const node = getCurrentNode();
+  const allNodesList = Object.values(ADVENTURE_NODES);
 
   useEffect(() => {
     suggestAmbienceForNode(node.id);
@@ -33,14 +42,56 @@ export const SceneCard: React.FC = () => {
       {/* Top Accent Gradient */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#e0a96d] via-[#9d4edd] to-[#e63946]" />
 
-      {/* Meta e Título */}
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="font-mono text-xs uppercase tracking-widest text-[#c77dff] font-bold">
-          {actTitle}
-        </span>
-        <span className="font-mono text-[11px] text-gray-500">
-          Nó: {node.id}
-        </span>
+      {/* BARRA SUPERIOR DO MESTRE: Meta & Navegador Rápido de Cenas */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 pb-2 border-b border-white/5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-mono text-xs uppercase tracking-widest text-[#c77dff] font-bold">
+            {actTitle}
+          </span>
+          <span className="font-mono text-[11px] text-[#ffd166] bg-black/40 px-2 py-0.5 rounded border border-[#ffd166]/20">
+            Nó Ativo: {node.id}
+          </span>
+        </div>
+
+        {/* Seletor Rápido de Cenas do Mestre (Liberdade Total de Navegação) */}
+        <div className="flex items-center gap-1.5 self-start sm:self-auto">
+          <div className="flex items-center gap-1 bg-[#0a0b10] border border-[#9d4edd]/40 rounded-xl px-2.5 py-1">
+            <Compass className="w-3.5 h-3.5 text-[#ffd166]" />
+            <span className="text-[11px] font-bold text-gray-300 hidden sm:inline">Saltar para Cena:</span>
+            <select
+              value={node.id}
+              onChange={(e) => {
+                const targetId = e.target.value;
+                if (targetId) jumpToNode(targetId);
+              }}
+              className="bg-transparent text-xs text-[#ffd166] font-semibold outline-none cursor-pointer max-w-[200px] sm:max-w-[260px] truncate"
+            >
+              <optgroup label="── ATO I: A Jornada ──">
+                {allNodesList.filter(n => (n.act || 1) === 1).map(n => (
+                  <option key={n.id} value={n.id} className="bg-[#141724] text-white">
+                    [{n.id}] {n.title}
+                  </option>
+                ))}
+              </optgroup>
+
+              <optgroup label="── ATO II: O Resgate & Severian ──">
+                {allNodesList.filter(n => n.act === 2).map(n => (
+                  <option key={n.id} value={n.id} className="bg-[#141724] text-white">
+                    [{n.id}] {n.title}
+                  </option>
+                ))}
+              </optgroup>
+
+              <optgroup label="── ATO III: A Verdade & Fuga ──">
+                {allNodesList.filter(n => n.act === 3).map(n => (
+                  <option key={n.id} value={n.id} className="bg-[#141724] text-white">
+                    [{n.id}] {n.title}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+          </div>
+        </div>
       </div>
 
       <h2 className="font-serif text-xl font-bold text-[#f3c68f] mb-3 drop-shadow-[0_0_12px_rgba(243,198,143,0.3)]">
@@ -108,35 +159,67 @@ export const SceneCard: React.FC = () => {
         <BossArena />
       )}
 
-      {/* Opções e Ramificações */}
+      {/* Arena Tática de Combate contra Varek */}
+      {node.id === "VF" && (
+        <VarekCombatArena />
+      )}
+
+      {/* Opções e Ramificações (com liberdade de escolha ou salto direto) */}
       {node.options && node.options.length > 0 && (
         <div className="mt-3">
-          <div className="flex items-center gap-1.5 text-xs font-serif font-bold text-[#ffd166] uppercase tracking-wider mb-2">
+          <div className="flex items-center justify-between text-xs font-serif font-bold text-[#ffd166] uppercase tracking-wider mb-2">
             <span>⚔️ Decisões & Caminhos dos Aventureiros:</span>
+            <span className="text-[10px] text-gray-400 font-sans font-normal lowercase">
+              clique para avançar aplicando efeitos ou use o seletor acima para saltar livre
+            </span>
           </div>
 
           <div className="flex flex-col gap-2">
             {node.options.map((opt) => (
-              <button
+              <div
                 key={opt.id}
-                onClick={() => chooseOption(opt.id)}
-                className="bg-[#161924]/95 border border-[#9d4edd]/25 hover:border-[#c77dff] rounded-xl p-3 text-left text-white flex items-center justify-between gap-3 group transition-all hover:translate-x-1 hover:bg-gradient-to-r hover:from-[#23283c] hover:to-[#9d4edd]/20 hover:shadow-[0_4px_16px_rgba(157,78,221,0.25)]"
+                className="bg-[#161924]/95 border border-[#9d4edd]/25 hover:border-[#c77dff] rounded-xl p-3 text-left text-white flex items-center justify-between gap-3 group transition-all hover:bg-gradient-to-r hover:from-[#23283c] hover:to-[#9d4edd]/20 hover:shadow-[0_4px_16px_rgba(157,78,221,0.25)]"
               >
-                <div className="flex flex-col gap-1 max-w-[85%]">
+                <div 
+                  onClick={() => chooseOption(opt.id)}
+                  className="flex flex-col gap-1 max-w-[80%] cursor-pointer flex-1"
+                >
                   <span className="font-semibold text-xs leading-snug text-gray-100 group-hover:text-white">
                     {opt.label}
                   </span>
-                  {opt.badge && (
-                    <span className="self-start text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#9d4edd]/20 text-[#c77dff] border border-[#9d4edd]/40">
-                      {opt.badge}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {opt.badge && (
+                      <span className="self-start text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#9d4edd]/20 text-[#c77dff] border border-[#9d4edd]/40">
+                        {opt.badge}
+                      </span>
+                    )}
+                    <span className="text-[10px] font-mono text-gray-400">
+                      Destino: <strong>[{opt.target}]</strong>
                     </span>
-                  )}
+                  </div>
                 </div>
 
-                <div className="w-7 h-7 rounded-lg bg-white/5 group-hover:bg-[#9d4edd] text-[#ffd166] group-hover:text-white flex items-center justify-center transition-all flex-shrink-0">
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {/* Botão de Decisão Padrão */}
+                  <button
+                    onClick={() => chooseOption(opt.id)}
+                    className="px-3 py-1.5 rounded-lg bg-white/5 group-hover:bg-[#9d4edd] text-[#ffd166] group-hover:text-white text-xs font-bold flex items-center gap-1 transition-all shadow"
+                    title="Avançar aplicando efeitos na sessão"
+                  >
+                    <span>Escolher</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                  </button>
+
+                  {/* Botão de Salto Livre Direto */}
+                  <button
+                    onClick={() => jumpToNode(opt.target)}
+                    className="p-1.5 rounded-lg bg-black/40 hover:bg-white/15 text-gray-400 hover:text-[#ffd166] border border-white/5 transition-colors text-xs"
+                    title={`Saltar direto para o nó [${opt.target}] sem aplicar efeitos`}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         </div>
@@ -144,3 +227,4 @@ export const SceneCard: React.FC = () => {
     </div>
   );
 };
+

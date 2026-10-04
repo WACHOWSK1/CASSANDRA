@@ -1,4 +1,4 @@
-﻿import { AudioCategory } from '@/types/adventure';
+import { AudioCategory } from '@/types/adventure';
 
 export const AUDIO_CATALOG: AudioCategory[] = [
     {

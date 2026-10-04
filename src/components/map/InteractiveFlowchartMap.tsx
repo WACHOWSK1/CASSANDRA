@@ -442,9 +442,7 @@ export const InteractiveFlowchartMap: React.FC = () => {
                     key={node.id}
                     className="flow-node-element cursor-pointer group"
                     onClick={() => {
-                      if (confirm(`Deseja mover a sessão para o nó: "${node.label}"?`)) {
-                        jumpToNode(node.id);
-                      }
+                      jumpToNode(node.id);
                     }}
                     transform={`translate(${node.x - widthNode / 2}, ${node.y - heightNode / 2})`}
                   >

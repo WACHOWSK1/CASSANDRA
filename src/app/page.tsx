@@ -3,23 +3,44 @@
 import React from 'react';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import { useAdventureStore } from '@/store/useAdventureStore';
+import { HydrationGuard } from '@/components/providers/HydrationGuard';
 import { TopHeader } from '@/components/layout/TopHeader';
 import { ResourcesSidebar } from '@/components/layout/ResourcesSidebar';
 import { NPCSidebar } from '@/components/layout/NPCSidebar';
 import { SceneCard } from '@/components/scene/SceneCard';
-import { InteractiveFlowchartMap } from '@/components/map/InteractiveFlowchartMap';
+import { TravelOperationsPanel } from '@/components/travel/TravelOperationsPanel';
 import { AudioPlayerPanel } from '@/components/audio/AudioPlayerPanel';
 import { FloatingAudioBar } from '@/components/audio/FloatingAudioBar';
-import { DiceRoller } from '@/components/dice/DiceRoller';
-import { ChronicleTimeline } from '@/components/chronicle/ChronicleTimeline';
+import { MasterOperationsPanel } from '@/components/operations/MasterOperationsPanel';
 import { NPCModal } from '@/components/modals/NPCModal';
+import { ItemModal } from '@/components/modals/ItemModal';
 import { ExportModal } from '@/components/modals/ExportModal';
-import { GripVertical, Music, Sparkles } from 'lucide-react';
+import { GripVertical, Music, Compass, Sparkles } from 'lucide-react';
 
 export default function MasterDashboardPage() {
-  const { actView, setActView, audioViewActive, toggleAudioView } = useAdventureStore();
+  const { 
+    actView, 
+    setActView, 
+    audioViewActive, 
+    toggleAudioView,
+    jumpToNode 
+  } = useAdventureStore();
+
+  const handleSelectAct = (actNum: number) => {
+    setActView(actNum);
+    const actFirstNodes: Record<number, string> = {
+      1: "S",
+      2: "M",
+      3: "VER_VERDADE"
+    };
+    const targetNodeId = actFirstNodes[actNum];
+    if (targetNodeId) {
+      jumpToNode(targetNodeId);
+    }
+  };
 
   return (
+    <HydrationGuard>
     <div className="flex flex-col h-screen overflow-hidden bg-[#0a0b10]">
       {/* Top Header HUD */}
       <TopHeader />
@@ -39,14 +60,14 @@ export default function MasterDashboardPage() {
             <GripVertical className="w-3 h-3 text-gray-600 group-hover:text-[#c77dff] transition-colors" />
           </PanelResizeHandle>
 
-          {/* PAINEL CENTRAL: NAVEGAÇÃO, CENA ATUAL, FLUXOGRAMA & MÚSICAS */}
+          {/* PAINEL CENTRAL: NAVEGAÇÃO, CENA ATUAL, EXPEDIÇÃO DE VIAGEM & MÚSICAS */}
           <Panel defaultSize={56} minSize={35} className="flex flex-col">
             {/* Wrapper scrollável — necessário porque o Panel aplica overflow:hidden inline */}
             <div className="flex flex-col gap-2.5 overflow-y-auto h-full px-1 scrollbar-thin">
-            {/* Abas de Navegação dos Atos e Banco de Músicas */}
+            {/* Abas de Navegação dos Atos, Viagem e Banco de Músicas */}
             <div className="flex gap-1.5 bg-[#12141c]/90 border border-[#9d4edd]/25 p-1 rounded-xl flex-shrink-0">
               <button
-                onClick={() => setActView(1)}
+                onClick={() => handleSelectAct(1)}
                 className={`flex-1 py-1.5 text-xs font-serif font-bold rounded-lg transition-all ${
                   actView === 1 && !audioViewActive
                     ? 'bg-gradient-to-r from-[#9d4edd]/40 to-[#264653]/50 text-[#ffd166] border border-[#c77dff] shadow-[0_0_12px_rgba(157,78,221,0.3)]'
@@ -57,7 +78,7 @@ export default function MasterDashboardPage() {
               </button>
 
               <button
-                onClick={() => setActView(2)}
+                onClick={() => handleSelectAct(2)}
                 className={`flex-1 py-1.5 text-xs font-serif font-bold rounded-lg transition-all ${
                   actView === 2 && !audioViewActive
                     ? 'bg-gradient-to-r from-[#9d4edd]/40 to-[#264653]/50 text-[#ffd166] border border-[#c77dff] shadow-[0_0_12px_rgba(157,78,221,0.3)]'
@@ -68,7 +89,7 @@ export default function MasterDashboardPage() {
               </button>
 
               <button
-                onClick={() => setActView(3)}
+                onClick={() => handleSelectAct(3)}
                 className={`flex-1 py-1.5 text-xs font-serif font-bold rounded-lg transition-all ${
                   actView === 3 && !audioViewActive
                     ? 'bg-gradient-to-r from-[#9d4edd]/40 to-[#264653]/50 text-[#ffd166] border border-[#c77dff] shadow-[0_0_12px_rgba(157,78,221,0.3)]'
@@ -94,11 +115,11 @@ export default function MasterDashboardPage() {
             {/* Condução da Cena Atual */}
             <SceneCard />
 
-            {/* Painel de Músicas ou Mapa Tático */}
+            {/* Painel de Músicas ou Status & Eventos de Viagem */}
             {audioViewActive ? (
               <AudioPlayerPanel />
             ) : (
-              <InteractiveFlowchartMap />
+              <TravelOperationsPanel />
             )}
             </div>{/* Fim do wrapper scrollável */}
           </Panel>
@@ -108,11 +129,10 @@ export default function MasterDashboardPage() {
             <GripVertical className="w-3 h-3 text-gray-600 group-hover:text-[#c77dff] transition-colors" />
           </PanelResizeHandle>
 
-          {/* PAINEL DIREITO: ROLADOR D20 & CRÔNICA EM TEMPO REAL */}
-          <Panel defaultSize={24} minSize={16} maxSize={35}>
+          {/* PAINEL DIREITO: OPERAÇÕES DO MESTRE (ALERTAS, PILONOS, ANTIMAGIA & REGRAS T20) */}
+          <Panel defaultSize={26} minSize={18} maxSize={38}>
             <div className="bg-[#141724]/90 backdrop-blur-xl border border-[#9d4edd]/25 rounded-2xl p-3 flex flex-col gap-3 overflow-y-auto h-full shadow-xl scrollbar-thin">
-              <DiceRoller />
-              <ChronicleTimeline />
+              <MasterOperationsPanel />
             </div>
           </Panel>
         </PanelGroup>
@@ -123,7 +143,9 @@ export default function MasterDashboardPage() {
 
       {/* Modais Globais */}
       <NPCModal />
+      <ItemModal />
       <ExportModal />
     </div>
+    </HydrationGuard>
   );
 }

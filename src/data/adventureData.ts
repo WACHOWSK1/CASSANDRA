@@ -30,6 +30,8 @@ export const INITIAL_GROUP_CONDITIONS: AdventureGroupConditions = {
   itensLacrados: 0,
   carrocaAbandonada: false,
   cicatrizPurpura: false,
+  fatigado: false,
+  fraco: false,
 };
 
 export const ADVENTURE_ACTS = [
@@ -828,29 +830,31 @@ export const ADVENTURE_NODES: Record<string, AdventureNode> = {
   "VF": {
     id: "VF",
     act: 2,
-    title: "Confronto Tático: Varek (Algoz de Severian)",
+    title: "Confronto Tático: Varek, o Caçador Arcano",
     type: "combat_arena",
-    summary: "Varek (PV 120, Defesa 26, Furtividade +15).",
+    summary: "Varek (ND 8, PV 58/120, PM 58, Defesa 30/34, RD Fogo 40, RD Física 5). Caçador arcano com combo brutal de Toque Chocante (11d8+13) no Machado de Batalha com vantagem, Contramágica (+21), Aparar Magia (+13) e Runa Homem-Bomba aos 0 PV.",
+    narration: "A ilusão se desfaz em centelhas douradas e fumaça fria! Varek empunha seu machado de batalha rúnico e ergue o escudo pesado com os raios solares de Azgher gravados no metal. Faíscas elétricas de alta voltagem crepitam ao longo do fio da lâmina enquanto ele fecha a passagem: 'Severian me pagou muito bem para garantir que ninguém saia vivo deste corredor. Vocês não passarão!'",
+    gmTips: "Varek é um caçador de elite extremamente preparado contra conjuradores: possui RD Fogo 40 e RD Física 5, +9 em todas as resistências contra magias (+20 Fort, +22 Refl, +17 Vont), usa Contramágica Aprimorada (+21) e Aparar Magia com o Machado (+13) para rebater feitiços. Seus ataques são desferidos com Vantagem (Concentração de Combate) e ele pode desferir até 2 ataques do combo Toque Chocante de 12 PM (11d8+13 + 2d8+3d6+7) por turno! CUIDADO: Se cair a 0 PV ou inconsciente, sua Runa de Proteção detona automaticamente como 'homem-bomba' (11d8+13 elétrico em raio de 6m)!",
     combatConfig: {
-      enemy: "Varek, o Metamorfo",
+      enemy: "Varek, o Caçador Arcano",
       pv: 120,
-      defesa: 26,
+      defesa: 30,
       thresholds: [
-        { pv: 60, event: "Varek tenta fugir para avisar Severian." },
-        { pv: 30, event: "Se cercado, Varek se rende." },
-        { pv: 0, event: "Varek é morto ou incapacitado." }
+        { pv: 60, event: "Varek atinge 60 PV e tenta fugir pelo alçapão secreto lançando Amarras Etéreas para cobrir sua retirada." },
+        { pv: 30, event: "Se encurralado aos 30 PV, Varek propõe rendição em troca da vida, entregando sua Máscara e o Contrato de Severian." },
+        { pv: 0, event: "⚠️ GATILHO RUNA DE PROTEÇÃO (HOMEM-BOMBA): Ao cair a 0 PV ou desmaiar, Varek descarrega 11d8+13 de dano elétrico em área de 6m (Reflexos CD 19 reduz metade)!" }
       ]
     },
     options: [
       {
         id: "VD_morto",
         target: "VI",
-        label: "Varek é morto ou incapacitado em combate direto",
-        badge: "Sem Testemunha / Severian Desprevenido",
+        label: "Varek é abatido em combate direto (Detona Runa Homem-Bomba)",
+        badge: "Runa Detonada / Espólios Recuperados",
         effects: {
           npcStatus: { varek: "morto" },
           resources: { mascaraVarek: true, contratoSeverian: true },
-          log: "Varek foi derrotado. Máscara de Varek e Contrato secreto recuperados."
+          log: "Varek foi derrotado em combate! A Runa Homem-Bomba detonou. Máscara de Varek e Contrato secreto de Severian recuperados."
         }
       },
       {
@@ -861,10 +865,10 @@ export const ADVENTURE_NODES: Record<string, AdventureNode> = {
         effects: {
           npcStatus: { varek: "rendido" },
           resources: { mascaraVarek: true, contratoSeverian: true },
-          log: "Varek se rendeu aos 30 PV."
+          log: "Varek se rendeu aos 30 PV sob ameaça de morte e entregou seus espólios sem detonar a runa."
         }
       },
-      { id: "VD_fuga", target: "VE_FUGA", label: "Varek atinge 60 PV e dispara em fuga", badge: "Tentativa de Fuga" }
+      { id: "VD_fuga", target: "VE_FUGA", label: "Varek atinge 60 PV e dispara em fuga pelo alçapão", badge: "Tentativa de Fuga" }
     ]
   },
 
@@ -1945,75 +1949,1082 @@ export const ADVENTURE_NODES: Record<string, AdventureNode> = {
 
 export const NPC_DATABASE: Record<string, NPCStats> = {
   cassandra: {
+    id: "cassandra",
     name: "Cassandra Crane",
     role: "Herdeira da Linhagem Crane / Conjuradora Desperta",
-    description: "Jovem nobre dotada de magia espontânea rara ligada à essência e aos Desejos arcanos. Determinada, perspicaz e recusando ser mera peça no tabuleiro de Severian.",
+    category: "aliado",
+    nd: 8,
+    tipo: "Humana, Conjuradora de Essência",
+    tamanho: "Médio",
+    deslocamento: "9m",
+    description: "Jovem nobre dotada de magia espontânea rara ligada à essência cósmica e aos Desejos arcanos. Cativa nas masmorras de Milothiann, ela se recusa a ser sacrificada no ritual de Severian. Conforme a aventura avança, pode despertar todo o legado e determinação da família Crane.",
+    atributos: {
+      for: 10,
+      des: 16,
+      con: 14,
+      int: 16,
+      sab: 14,
+      car: 20
+    },
+    pericias: [
+      { nome: "Misticismo", mod: 14 },
+      { nome: "Vontade", mod: 13 },
+      { nome: "Diplomacia", mod: 16 },
+      { nome: "Enganação", mod: 15 },
+      { nome: "Iniciativa", mod: 12 },
+      { nome: "Conhecimento", mod: 12 },
+      { nome: "Percepção", mod: 11 }
+    ],
     combatStats: {
       pv: 48,
-      pm: 32,
-      defesa: 18,
+      pm: 42,
+      defesa: 19,
+      iniciativa: 12,
+      rd: 0,
+      sentidos: "Percepção às Cegas (Mana) 9m",
+      resistencias: ["+4 em testes contra efeitos de encantamento e ilusão"],
+      ataques: [
+        {
+          nome: "Raio de Essência Pura",
+          teste: "Ataque à Distância +14",
+          mod: 14,
+          dano: "3d6+5",
+          tipo: "Essência",
+          alcance: "Médio (30m)",
+          critico: "19/x2",
+          especial: "Ignora qualquer Redução de Dano mundana"
+        },
+        {
+          nome: "Toque Desestabilizador",
+          teste: "Ataque Desarmado +11",
+          mod: 11,
+          dano: "1d4+3 + 2d6",
+          tipo: "Impacto + Essência",
+          alcance: "Corpo a corpo",
+          critico: "x2",
+          especial: "Alvo fica Ofuscado por 1 rodada (Fortitude CD 19 evita)"
+        }
+      ],
+      magias: [
+        {
+          nome: "Desejo Espontâneo",
+          custoPM: 3,
+          escola: "Transmutação / Encantamento",
+          alcance: "Curto (9m)",
+          duracao: "Instantânea",
+          desc: "Reação: Quando um aliado faz um teste de perícia ou ataque, Cassandra dobra as correntes do destino concedendo +4 no teste ou permitindo rolar novamente."
+        },
+        {
+          nome: "Fagulha da Linhagem Crane",
+          custoPM: 2,
+          cd: 20,
+          escola: "Evocação",
+          alcance: "Médio (30m)",
+          duracao: "Instantânea",
+          desc: "Disparo concentrado que causa 4d6+4 de dano de Essência. Reflexos CD 20 reduz à metade."
+        },
+        {
+          nome: "Escudo do Destino Entalhado",
+          custoPM: 2,
+          escola: "Abjuração",
+          alcance: "Pessoal / Aliado até 9m",
+          duracao: "1 cena",
+          desc: "Reação: Concede +5 de Defesa e RD 5 contra o próximo ataque que iria atingir o alvo."
+        },
+        {
+          nome: "Inversão de Runas Arcanas",
+          custoPM: 4,
+          cd: 22,
+          escola: "Misticismo Aplicado",
+          alcance: "Médio (30m)",
+          duracao: "Instantânea",
+          desc: "Interfere nos Pilonos Arcanos de Severian, fazendo um raio rebater no Inquisidor-Mor causando 3d10+10 de dano."
+        }
+      ],
       habilidades: [
-        "Desejo Espontâneo (Reação, 3 PM): Concede +4 em um teste de perícia ou ataque de um aliado.",
-        "Fagulha da Linhagem (Padrão, 2 PM): Disparo de 4d6 de essência (Reflexos CD 20 reduz metade).",
-        "Determinação Familiar (+2 passivo em testes de Vontade contra medo e coerção se desbloqueado)."
+        {
+          nome: "Determinação Familiar",
+          tipoAcao: "Passiva",
+          desc: "Se desbloqueada no Ato II/III, Cassandra e aliados a até 9m ganham +2 em testes de Vontade contra medo, coerção e trevas."
+        },
+        {
+          nome: "Elo Protetor com Aldren",
+          tipoAcao: "Reação (1 PM)",
+          desc: "Se Aldren estiver adjacente a Cassandra, ambos ganham RD 5 e +2 em todos os testes de resistência."
+        }
       ]
+    },
+    equipamentos: [
+      "Túnica Cerimonial da Casa Crane (antigas tramas arcanas)",
+      "Anel de Sinete Crane (ouro antigo partido ou recomposto)",
+      "Pequeno prisma de foco de essência"
+    ],
+    taticas: "Cassandra atua como suporte arcano tático de alto impacto. Ela usa 'Desejo Espontâneo' para salvar aliados que falharam em testes cruciais e 'Escudo do Destino' para evitar golpes letais. Quando em segurança, dispara Raios de Essência que ignoram a RD dos pilonos.",
+    roleplay: {
+      personalidade: "Perspicaz, orgulhosa de suas origens, mas profundamente rebelde contra o destino de sacrifício que outros tentaram impor a ela. Não abaixa a cabeça nem diante de inquisidores armados.",
+      motivacao: "Libertar-se das maquinações de Severian, salvar seu tio Aldren e decidir seu próprio nome e futuro longe das amarras inquisitoriais.",
+      citacao: "'Vocês vieram me resgatar, mas não serei um fardo que se carrega. Se querem me tirar daqui, me dêem espaço para lutar ao lado de vocês.'",
+      notasMestre: "Use a voz de Cassandra com firmeza e inteligência. Ela reconhece passagens secretas nos túneis de Milothiann e pode dar pistas sobre o Enigma das Chamas e os Pilonos."
     }
   },
+
   aldren: {
+    id: "aldren",
     name: "Aldren Crane",
     role: "Patriarca Crane / Antigo Cavaleiro Inquisitorial",
-    description: "Guerreiro veterano marcado por cicatrizes e remorso, que aceitou a desonra para proteger Cassandra das maquinações de Milothiann.",
+    category: "aliado",
+    nd: 7,
+    tipo: "Humano, Cavaleiro Veterano",
+    tamanho: "Médio",
+    deslocamento: "9m (6m em armadura pesada)",
+    description: "Veterano com rosto marcado por cicatrizes de batalha e olhos pesados de remorso. Antigo comandante que serviu à ordem de Milothiann antes de descobrir que a Inquisição planejava sacrificar Cassandra. Ficou aprisionado na Capela Desconsagrada.",
+    atributos: {
+      for: 18,
+      des: 12,
+      con: 18,
+      int: 12,
+      sab: 14,
+      car: 12
+    },
+    pericias: [
+      { nome: "Luta", mod: 15 },
+      { nome: "Fortitude", mod: 14 },
+      { nome: "Vontade", mod: 11 },
+      { nome: "Iniciativa", mod: 8 },
+      { nome: "Percepção", mod: 9 },
+      { nome: "Guerra", mod: 11 },
+      { nome: "Atletismo", mod: 13 }
+    ],
     combatStats: {
       pv: 95,
-      defesa: 24,
+      pm: 20,
+      defesa: 25,
+      iniciativa: 8,
+      rd: 5,
+      sentidos: "Visão normal",
+      ataques: [
+        {
+          nome: "Espada Bastarda dos Crane",
+          teste: "Luta +15",
+          mod: 15,
+          dano: "1d10+10 (uma mão) ou 1d12+12 (duas mãos)",
+          tipo: "Corte",
+          alcance: "Corpo a corpo",
+          critico: "19/x2",
+          especial: "Ataque Pesado: Permite manobra Derrubar ou Empurrar como ação livre se acertar."
+        },
+        {
+          nome: "Escudo Torre de Aço Inquisitorial",
+          teste: "Luta +13",
+          mod: 13,
+          dano: "1d6+8",
+          tipo: "Impacto",
+          alcance: "Corpo a corpo",
+          critico: "x2",
+          especial: "Alvo atingido fica Desestabilizado (-2 na Defesa até o próximo turno)."
+        }
+      ],
       habilidades: [
-        "Guardião Veterano: Concede +3 de Defesa e RD 5 passiva para Cassandra quando adjacente.",
-        "Golpe Supressor (Padrão): Ataque corpo a corpo +14 (2d8+8 impacto) com manobra Derrubar gratuita.",
-        "Sacrifício Inabalável: Pode interceptar qualquer ataque direcionado a Cassandra absorvendo o dano integral."
+        {
+          nome: "Guardião Veterano",
+          tipoAcao: "Passiva",
+          desc: "Enquanto estiver adjacente a Cassandra ou a outro aliado ferido, concede +3 na Defesa e RD 5 passiva para o aliado protegido."
+        },
+        {
+          nome: "Sacrifício Inabalável",
+          tipoAcao: "Reação (2 PM)",
+          desc: "Quando um ataque corpo a corpo ou à distância for direcionado a Cassandra a até 3m, Aldren pode se colocar na trajetória e receber o dano integral em seu lugar."
+        },
+        {
+          nome: "Comando de Batalha",
+          tipoAcao: "Movimento (2 PM)",
+          desc: "Grita ordens táticas veteranas concedendo +2 em testes de ataque e +3m de deslocamento para todos os aliados a até 9m por 1 rodada."
+        },
+        {
+          nome: "Duro na Queda",
+          tipoAcao: "Reação (1 PM)",
+          desc: "Quando sofrer dano letal, reduz o dano à metade com um teste de Fortitude (CD = dano recebido)."
+        }
       ]
+    },
+    equipamentos: [
+      "Armadura de Placas Completa Antiga (brasão dos Crane raspado)",
+      "Espada Bastarda de Aço-Rubro da família",
+      "Escudo Torre com símbolos de juramento",
+      "Capa puída e medalhão de Helena"
+    ],
+    taticas: "Aldren é a âncora de linha de frente. Ele trava os atacantes mais perigosos (como os cultistas ou Varek) com derrubadas e usa seu escudo para bloquear o avanço contra os conjuradores do grupo.",
+    roleplay: {
+      personalidade: "Austero, contido e protetor. Carrega o peso de ter acreditado cegamente na liturgia de Milothiann até ser tarde demais.",
+      motivacao: "Proteger Cassandra com a própria vida e purgar a vergonha de sua antiga cumplicidade com Severian.",
+      citacao: "'Eu jurei proteger esta menina quando ela nasceu. Severian terá que passar por cima do meu cadáver para tocar num único fio de cabelo dela.'",
+      notasMestre: "Se Aldren for salvo na Capela, ele se torna um aliado tático formidável no combate final. No Ato III, ele pode realizar o sacrifício na ponte caso o grupo não tenha outro plano."
     }
   },
-  varek: {
-    name: "Varek, o Metamorfo",
-    role: "Assassino e Espião de Severian",
-    description: "Assassino frio capaz de mudar de forma e imitar vozes perfeitamente. Luta com agilidade acrobática e lâminas envenenadas.",
+
+  cael: {
+    id: "cael",
+    name: "Cael, o Batedor de Yuvalin",
+    role: "Mensageiro Confiável de Helena / Guia das Estradas",
+    category: "aliado",
+    nd: 4,
+    tipo: "Humano, Ladino / Batedor",
+    tamanho: "Médio",
+    deslocamento: "12m",
+    description: "Homem ágil de roupas escuras e capuz manchado de poeira da estrada. É o batedor enviado pessoalmente por Helena de Yuvalin para guiar os heróis pelas rotas de Portsmouth e Milothiann.",
+    atributos: {
+      for: 12,
+      des: 18,
+      con: 14,
+      int: 14,
+      sab: 14,
+      car: 12
+    },
+    pericias: [
+      { nome: "Furtividade", mod: 14 },
+      { nome: "Ladinagem", mod: 13 },
+      { nome: "Sobrevivência", mod: 12 },
+      { nome: "Iniciativa", mod: 12 },
+      { nome: "Percepção", mod: 11 },
+      { nome: "Pontaria", mod: 12 },
+      { nome: "Acrobacia", mod: 12 }
+    ],
     combatStats: {
-      pv: 120,
-      defesa: 26,
-      iniciativa: 18,
+      pv: 42,
+      pm: 18,
+      defesa: 20,
+      iniciativa: 12,
+      rd: 0,
+      sentidos: "Visão na Penumbra",
+      ataques: [
+        {
+          nome: "Arco Curto com Flechas de Caça",
+          teste: "Pontaria +12",
+          mod: 12,
+          dano: "1d6+5",
+          tipo: "Perfuração",
+          alcance: "Médio (30m)",
+          critico: "x3",
+          especial: "+2d6 de Ataque Furtivo se o alvo estiver desprevenido ou flanqueado."
+        },
+        {
+          nome: "Adaga Oculta",
+          teste: "Luta +10",
+          mod: 10,
+          dano: "1d4+4",
+          tipo: "Perfuração",
+          alcance: "Curto",
+          critico: "19/x2"
+        }
+      ],
       habilidades: [
-        "Adagas Duplas Envenenadas (+16/+16, dano 1d6+6 corte + 2d6 veneno de paralisia Fortitude CD 19).",
-        "Disfarce Ilusório: Concede camuflagem e 2 reflexos ilusórios na 1ª rodada se não desmascarado.",
-        "Bomba de Fumaça Alquímica (Movimento): Cria névoa densa e permite teste de Furtividade imediato."
+        {
+          nome: "Ataque Furtivo",
+          tipoAcao: "Passiva",
+          desc: "Causa +2d6 de dano de precisão contra alvos desprevenidos ou flanqueados."
+        },
+        {
+          nome: "Guia das Rotas Ocultas",
+          tipoAcao: "Suporte",
+          desc: "Concede +2 em testes de Sobrevivência e Furtividade para o grupo durante viagens e infiltrações."
+        },
+        {
+          nome: "Evasão",
+          tipoAcao: "Reação",
+          desc: "Em testes de Reflexos contra dano em área, se passar não sofre nenhum dano; se falhar sofre metade."
+        }
       ]
+    },
+    equipamentos: [
+      "Armadura de Couro Batido leve",
+      "Arco Curto e aljava com 30 flechas",
+      "Duas adagas balanceadas",
+      "Mapa secreto dos canais de esgoto de Milothiann",
+      "Carta selada de Helena com ordens e códigos"
+    ],
+    taticas: "Cael nunca entra em combate direto no corpo a corpo se puder evitar. Ele mantém distância, usa cobertura para se esconder a cada rodada e dispara flechas furtivas nos alvos que estão engajados com os guerreiros.",
+    roleplay: {
+      personalidade: "Pragmático, rápido e observador. Fala em sussurros e desconfia de estranhos até que a carta de Helena seja confirmada.",
+      motivacao: "Cumprir o juramento a Helena e garantir que Cassandra seja resgatada das garras de Severian.",
+      citacao: "'As estradas de Portsmouth têm mais olhos do que árvores. Se dermos um passo em falso, o Inquisidor saberá antes do amanhecer.'",
+      notasMestre: "Se o grupo confiar em Cael no Ato I, ele pode cuidar do garoto Toma ou guiar pelo cortejo funerário. Se atacado, fica ferido e incapacitado."
     }
   },
+
+  helena: {
+    id: "helena",
+    name: "Lady Helena de Yuvalin",
+    role: "Patrona Nobre / Artífice e Maga Protetora",
+    category: "aliado",
+    nd: 6,
+    tipo: "Humana, Nobre / Artífice",
+    tamanho: "Médio",
+    deslocamento: "9m",
+    description: "Nobre influente de Yuvalin e amiga jurada da mãe de Cassandra. Forneceu os recursos iniciais, a carroça de viagem e a carta de salvo-conduto. Especialista em artefatos e runas arcanas.",
+    atributos: {
+      for: 10,
+      des: 14,
+      con: 12,
+      int: 18,
+      sab: 16,
+      car: 16
+    },
+    pericias: [
+      { nome: "Conhecimento", mod: 14 },
+      { nome: "Ofício (Alquimia/Engenharia)", mod: 15 },
+      { nome: "Misticismo", mod: 13 },
+      { nome: "Diplomacia", mod: 13 },
+      { nome: "Investigação", mod: 14 },
+      { nome: "Percepção", mod: 11 }
+    ],
+    combatStats: {
+      pv: 40,
+      pm: 30,
+      defesa: 17,
+      iniciativa: 8,
+      rd: 2,
+      ataques: [
+        {
+          nome: "Besta Leve Precisa",
+          teste: "Pontaria +10",
+          mod: 10,
+          dano: "1d8+4",
+          tipo: "Perfuração",
+          alcance: "Médio (30m)",
+          critico: "19/x2"
+        }
+      ],
+      magias: [
+        {
+          nome: "Identificação Instantânea",
+          custoPM: 1,
+          escola: "Adivinhação",
+          desc: "Identifica propriedades mágicas de qualquer item ou runa em 1 rodada."
+        },
+        {
+          nome: "Campo de Força Alquímico",
+          custoPM: 2,
+          cd: 18,
+          escola: "Abjuração",
+          desc: "Cria barreira com 30 PV temporários que protege um alvo a até 9m."
+        }
+      ]
+    },
+    equipamentos: [
+      "Vestimentas de viagem nobres reforçadas",
+      "Grimório de anotações da família Mara e Crane",
+      "Selo de cera legítimo de Yuvalin"
+    ],
+    taticas: "Helena é a mente estratégica por trás do resgate. Ela atua nos bastidores fornecendo cartas, suprimentos e conexões de inteligência.",
+    roleplay: {
+      personalidade: "Elegante, metódica e com uma determinação de ferro sob o verniz aristocrático.",
+      motivacao: "Honrar a memória da mãe de Cassandra e impedir que o poder profano de Milothiann se espalhe para Yuvalin.",
+      citacao: "'Severian pensa que os nobres de Yuvalin são fracos. Mostraremos a ele o peso do aço e da verdade.'"
+    }
+  },
+
+  toma: {
+    id: "toma",
+    name: "Toma & Mara de Greywick",
+    role: "Refugiados e Guardiões dos Documentos de Mara",
+    category: "coadjuvante",
+    nd: 2,
+    tipo: "Humanos, Plebeus / Arquivistas",
+    tamanho: "Pequeno (Toma) / Médio (Mara)",
+    deslocamento: "9m",
+    description: "Toma é um garoto de 10 anos corajoso que escondeu o Livro de Khorcova e a Placa de passagem dos Crane sob a capela de Greywick. Mara é sua tutora e bibliotecária que possui a chave para decifrar os segredos de Milothiann.",
+    atributos: {
+      for: 8,
+      des: 14,
+      con: 10,
+      int: 14,
+      sab: 12,
+      car: 14
+    },
+    pericias: [
+      { nome: "Furtividade", mod: 10 },
+      { nome: "Percepção", mod: 8 },
+      { nome: "Investigação", mod: 8 },
+      { nome: "Conhecimento", mod: 7 }
+    ],
+    combatStats: {
+      pv: 16,
+      defesa: 14,
+      iniciativa: 6,
+      habilidades: [
+        {
+          nome: "Esconderijo Sob os Escombros",
+          tipoAcao: "Passiva",
+          desc: "Ganha +5 em Furtividade quando escondido em passagens estreitas ou sob pisos."
+        },
+        {
+          nome: "Guardião dos Sais de Proteção",
+          tipoAcao: "Suporte",
+          desc: "Toma carrega 3 frascos de Sais de Proteção Arcanos que anulam o primeiro efeito de Alerta ou drenagem de PM."
+        }
+      ]
+    },
+    equipamentos: [
+      "Livro de Khorcova (plantas dos canais e fraquezas de Severian)",
+      "Placa de Passagem de Greywick",
+      "3 Frascos de Sais de Proteção Arcano"
+    ],
+    roleplay: {
+      personalidade: "Toma é assustado mas obstinado; Mara é protetora e extremamente grata a quem salvar o menino.",
+      citacao: "'Eu não deixei os inquisidores pegarem o livro... eu prometi que entregaria para vocês!'",
+      notasMestre: "O resgate de Toma em Greywick no Ato I define se ele entrega os recursos sem custo ou se haverá penalidades de suprimentos/mana."
+    }
+  },
+
   severian: {
+    id: "severian",
     name: "Inquisidor-Mor Severian",
-    role: "Alto Prelado da Inquisição de Khorcova",
-    description: "Fanático ambicioso que manipula correntes de mana profana e os Pilonos de Milothiann.",
+    role: "Alto Prelado da Inquisição de Khorcova / Boss do Ato II",
+    category: "antagonista",
+    nd: 10,
+    tipo: "Humano Corrompido, Conjurador Divino / Profano",
+    tamanho: "Médio",
+    deslocamento: "9m",
+    description: "Alto Prelado que comanda a fortaleza de Milothiann. Utiliza a liturgia inquisitorial para mascarar seu pacto com entidades do abismo e canalizar os 4 Pilonos Arcanos para invocar o avatar de Ferren.",
+    atributos: {
+      for: 14,
+      des: 14,
+      con: 20,
+      int: 18,
+      sab: 22,
+      car: 18
+    },
+    pericias: [
+      { nome: "Religião / Misticismo", mod: 18 },
+      { nome: "Vontade", mod: 17 },
+      { nome: "Iniciativa", mod: 12 },
+      { nome: "Intimidação", mod: 16 },
+      { nome: "Percepção", mod: 14 },
+      { nome: "Luta", mod: 14 }
+    ],
     combatStats: {
       pv: 150,
+      pm: 60,
       defesa: 28,
-      rd: "5 por pilono ativo",
+      iniciativa: 12,
+      rd: "5 por Pilono Ativo (máx RD 20 com 4 pilonos)",
+      sentidos: "Visão no Escuro 18m, Sentir Magia contínuo",
+      resistencias: ["+5 em testes contra dano de Trevas e Fogo", "Imune a Efeitos de Medo e Encantamento"],
+      ataques: [
+        {
+          nome: "Báculo de Ossos Santos & Trevas",
+          teste: "Luta +18 (corpo a corpo ou alcance 18m)",
+          mod: 18,
+          dano: "3d8+10",
+          tipo: "Impacto + Trevas",
+          alcance: "18m",
+          critico: "19/x3",
+          especial: "Drena 1d4 PM do alvo e cura Severian em valor igual ao dano de trevas."
+        },
+        {
+          nome: "Toque do Julgamento Corrompido",
+          teste: "Toque +16",
+          mod: 16,
+          dano: "4d6+8",
+          tipo: "Profano",
+          alcance: "Corpo a corpo",
+          critico: "x2",
+          especial: "Alvo fica Esmorecido (Vontade CD 22 reduz metade)"
+        }
+      ],
+      magias: [
+        {
+          nome: "Julgamento Herético em Cone",
+          custoPM: 4,
+          cd: 22,
+          escola: "Necromancia / Evocação",
+          alcance: "Cone de 9m",
+          duracao: "Instantânea",
+          desc: "Torrente de chamas negras e brasas profanas que causa 6d6+6 de dano de Trevas. Reflexos CD 22 reduz metade."
+        },
+        {
+          nome: "Colunas de Fogo Profano",
+          custoPM: 5,
+          cd: 22,
+          escola: "Evocação",
+          alcance: "Longo (90m)",
+          duracao: "Instantânea",
+          desc: "Erompe duas colunas de chamas negras em áreas de 3m de raio, causando 5d8 de dano de Fogo/Trevas cada."
+        },
+        {
+          nome: "Comando da Inquisição",
+          custoPM: 3,
+          cd: 22,
+          escola: "Encantamento",
+          alcance: "Médio (30m)",
+          duracao: "1 rodada",
+          desc: "Força um herói a ajoelhar e largar suas armas ou atacar um companheiro (Vontade CD 22 anula)."
+        }
+      ],
       habilidades: [
-        "Báculo de Ossos Santos (+18 corpo a corpo ou à distância, 3d8+10 trevas/essência).",
-        "Ressonância dos Pilonos: Regenera 10 PV por turno para cada pilono em funcionamento.",
-        "Julgamento Herético (Padrão, 4 PM): Explosão de chamas negras em cone de 9m (6d6 trevas, Reflexos CD 22 metade)."
+        {
+          nome: "Ressonância dos 4 Pilonos Arcanos",
+          tipoAcao: "Passiva / Regeneração",
+          desc: "No início de cada um de seus turnos, Severian regenera 10 PV para CADA pilono ativo (até 40 PV/turno se todos os 4 estiverem funcionando) e ganha RD 5 por pilono."
+        },
+        {
+          nome: "Grito de Convocação dos Acólitos",
+          tipoAcao: "Movimento (Recarga 1d4 rodadas)",
+          desc: "Invoca 2 Soldados Inquisitoriais ou 1 Acólito das sombras para proteger os pilonos."
+        },
+        {
+          nome: "Escudo Litúrgico Blasfemo",
+          tipoAcao: "Reação (3 PM)",
+          desc: "Quando atingido por um ataque que cause dano massivo, reduz o dano em 20 usando a energia dos pilonos."
+        }
+      ]
+    },
+    equipamentos: [
+      "Manto de Seda Carmesim e Ouro da Inquisição",
+      "Báculo de Ossos Santos entalhado com runas proibidas",
+      "Contrato Sombrio de Severian e Confissão de Traição",
+      "Chave Mestra dos Aposentos de Milothiann"
+    ],
+    taticas: "Severian luta com total confiança enquanto seus pilonos estiverem ativos. Ele fica no centro da arena disparando o Báculo e Julgamento Herético. Se os heróis começarem a destruir os pilonos, ele foca seus ataques mais destrutivos no herói que estiver atacando os pilonos e usa 'Comando da Inquisição' para desacelerar o grupo.",
+    roleplay: {
+      personalidade: "Arrogante, frio, com retórica religiosa fervorosa usada para mascarar ambição desmedida de poder.",
+      motivacao: "Sacrificar Cassandra no alinhamento dos pilonos para alcançar a imortalidade como arauto de Ferren.",
+      citacao: "'Vocês chamam isso de heresia? Eu chamo de salvação! O sangue dos Crane acenderá a chama da verdadeira ordem!'",
+      notasMestre: "Destaque a regeneração de PV a cada rodada para incentivar os jogadores a destruírem os pilonos com atletismo/misticismo ou usarem a Inversão de Runas de Cassandra."
+    }
+  },
+
+  varek: {
+    id: "varek",
+    name: "Varek, o Caçador Arcano",
+    role: "Algoz de Severian / Arcanista Bruxo & Guerreiro de Azgher",
+    category: "antagonista",
+    nd: 8,
+    tipo: "Elfo Cativo das Fadas, Arcanista Bruxo 7 / Guerreiro 1",
+    tamanho: "Médio",
+    deslocamento: "12m",
+    description: "Caçador de recompensas implacável de alta precisão arcana, contratado a peso de ouro por Severian para caçar o grupo e emboscá-los na Galeria dos Confiscados. Devoto fervoroso de Azgher, Varek preparou seu corpo e mente com meticulosidade: acorda, conjura seus buffs diários contínuos (Armadura Arcana, Arma Mágica, Resistência a Energia Fogo 40), consome poções de mana para manter seus 58 PM no ápice e aguarda suas presas disfarçado com sua máscara mágica. Em combate, desfere o temível combo de Ataque Arcano que canaliza Toque Chocante de 12 PM (11d8+13) em seu Machado de Batalha com Vantagem em jogadas de ataque, podendo golpear duas vezes por turno! Possui defesa mágica quase intransponível (+9 em todas as resistências, Contramágica Aprimorada +21 e Aparar Magia que reflete feitiços no conjurador) e, caso caia a 0 PV ou inconsciente, sua Runa de Proteção no peito detona como um homem-bomba em área!",
+    atributos: {
+      for: 8,
+      des: 18,
+      con: 14,
+      int: 20,
+      sab: 8,
+      car: 10
+    },
+    pericias: [
+      { nome: "Misticismo", mod: 21 },
+      { nome: "Luta", mod: 13 },
+      { nome: "Iniciativa", mod: 12 },
+      { nome: "Fortitude", mod: 11 },
+      { nome: "Reflexos", mod: 13 },
+      { nome: "Vontade", mod: 8 },
+      { nome: "Nobreza", mod: 13 },
+      { nome: "Percepção", mod: 9 },
+      { nome: "Investigação", mod: 9 },
+      { nome: "Atletismo", mod: 7 },
+      { nome: "Enganação (c/ Máscara)", mod: 8 }
+    ],
+    combatStats: {
+      pv: 58,
+      pm: 58,
+      defesa: 30,
+      iniciativa: 12,
+      rd: "RD Fogo 40 (Resistência a Energia / Azgher) • RD Física 5 (Escudo & Postura)",
+      sentidos: "Sentidos Élficos, Visão na Penumbra, Sentir Magia 18m",
+      resistencias: [
+        "+9 em TODOS os testes de resistência contra magias (Fortitude +20, Reflexos +22, Vontade +17 vs Magia)",
+        "RD Fogo 40 por Bênção de Azgher e Resistência a Energia",
+        "RD Física 5 passiva em combate pelo Escudo Rúnico e treinamento marcial",
+        "Escudo Pesado Abascanto (+2 adicional em testes contra magias)",
+        "Imune a sono mágico e efeitos de metamorfose forçada"
+      ],
+      imunidades: ["Sono mágico", "Metamorfose forçada"],
+      ataques: [
+        {
+          nome: "⚡ Combo Devastador: Machado AM + Toque Chocante (12 PM)",
+          teste: "Luta +13 (Vantagem com 2 dados via Concentração de Combate; Ataque Especial +4)",
+          mod: 13,
+          dano: "2d8+3d6+7 corte + 11d8+13 eletricidade",
+          tipo: "Corte + Eletricidade Arcana",
+          alcance: "Corpo a corpo",
+          critico: "20/x3 (Machado)",
+          especial: "Ataque Arcano: Não é teste de magia, é teste de ataque! Canaliza Toque Chocante de 12 PM no machado. Com Ataque Arcano, pode desferir 2x por rodada esse mesmo combo (gastando 24 PM no turno)!"
+        },
+        {
+          nome: "Machado de Batalha AM (Anátema Certeiro Pungente)",
+          teste: "Luta +13 (com Vantagem)",
+          mod: 13,
+          dano: "2d8+3d6+7",
+          tipo: "Corte",
+          alcance: "Corpo a corpo",
+          critico: "20/x3",
+          especial: "Empunhado com uma mão junto ao Escudo Pesado Abascanto. Pode somar +4 no ataque ou no dano com Ataque Especial de Guerreiro (1 PM)."
+        },
+        {
+          nome: "Amarras Etéreas (Controle de Caçador)",
+          teste: "Magia à Distância (CD 19)",
+          mod: 19,
+          dano: "Condição Preso e Imobilizado",
+          tipo: "Essência",
+          alcance: "Médio (30m)",
+          critico: "--",
+          especial: "Reflexos CD 19 evita. Se falhar, o alvo fica Preso e Imobilizado, incapaz de se deslocar ou conjurar sem teste de Misticismo/Atletismo CD 19."
+        },
+        {
+          nome: "Adagas Duplas Envenenadas (Opção Tática Rápida)",
+          teste: "Luta +13/+13",
+          mod: 13,
+          dano: "1d6+4 corte + veneno",
+          tipo: "Corte + Veneno",
+          alcance: "Corpo a corpo",
+          critico: "19/x2",
+          especial: "Fortitude CD 19 ou fica Lento por 1 minuto."
+        }
+      ],
+      magias: [
+        {
+          nome: "Toque Chocante (Aprimorado Máximo - 12 PM)",
+          custoPM: 12,
+          escola: "Evocação",
+          alcance: "Toque (canalizado através do Machado de Batalha)",
+          duracao: "Instantânea",
+          desc: "Causa 11d8+13 de dano elétrico massivo. Graças a Ataque Arcano, é desferido como parte do teste de ataque do Machado de Batalha, aplicando ambos os danos simultaneamente."
+        },
+        {
+          nome: "Concentração de Combate (1 PM)",
+          custoPM: 1,
+          escola: "Adivinhação",
+          alcance: "Pessoal",
+          duracao: "1 rodada",
+          desc: "Varek rola dois dados d20 em todas as jogadas de ataque corpo a corpo e usa o melhor resultado (Vantagem permanente em seus combos)."
+        },
+        {
+          nome: "Contramágica Aprimorada (Reação - Misticismo +21)",
+          custoPM: 0,
+          escola: "Abjuração",
+          alcance: "Médio (30m)",
+          duracao: "Instantânea",
+          desc: "Uma vez por rodada como reação, quando um conjurador inimigo conjura uma magia, Varek faz um teste de Misticismo (+21) contra a CD da magia para anulá-la no ato."
+        },
+        {
+          nome: "Aparar Magia (Reação - Teste de Ataque +13)",
+          custoPM: 0,
+          escola: "Abjuração / Marcial",
+          alcance: "Pessoal",
+          duracao: "Instantânea",
+          desc: "Se uma magia atingir Varek (ou passar pela contramágica), ele pode fazer um teste de ataque com o Machado (+13) contra a CD da magia. Se o ataque for maior que a CD, Varek sofre zero dano e a magia é refletida de volta contra o conjurador original!"
+        },
+        {
+          nome: "Runa de Proteção: Homem-Bomba (Gatilho 0 PV / Inconsciência)",
+          custoPM: 0,
+          escola: "Evocação / Rúnica",
+          alcance: "Raio de 6m ao redor de Varek",
+          duracao: "Instantânea (Reação Automática)",
+          desc: "Gravada em seu peito: no exato instante em que Varek for reduzido a 0 PV ou cair inconsciente, a runa detona automaticamente descarregando Toque Chocante em área (11d8+13 de dano elétrico em todos num raio de 6m; Reflexos CD 19 reduz metade)."
+        },
+        {
+          nome: "Amarras Etéreas (3 PM)",
+          custoPM: 3,
+          cd: 19,
+          escola: "Invocação",
+          alcance: "Médio (30m)",
+          duracao: "Sustentada",
+          desc: "Fios translúcidos prendem o alvo (Reflexos CD 19 anula). Alvo preso fica Imobilizado e Desprevenido."
+        },
+        {
+          nome: "Buffs Matinais Contínuos: Armadura Arcana, Arma Mágica & Resistência a Energia",
+          custoPM: 0,
+          escola: "Transmutação / Abjuração",
+          alcance: "Pessoal",
+          duracao: "Dia Inteiro (Renovado com poções)",
+          desc: "Garantem Defesa 30, Machado com +3d6 de bônus mágico e RD Fogo 40."
+        },
+        {
+          nome: "Disfarce Ilusório (1 PM)",
+          custoPM: 1,
+          cd: 19,
+          escola: "Ilusão",
+          alcance: "Pessoal",
+          duracao: "Cena",
+          desc: "Permite a Varek assumir perfeitamente a aparência da prisioneira na cela (Falsa Mara ou Cassandra)."
+        }
+      ],
+      habilidades: [
+        {
+          nome: "Ataque Arcano (Duplo Golpe Devastador por Turno)",
+          tipoAcao: "Padrão / Livre",
+          desc: "Quando desfere um ataque com magia acoplada (Toque Chocante), pode gastar mana para desferir um segundo ataque com Toque Chocante no mesmo turno, totalizando dois golpes devastadores na mesma rodada!"
+        },
+        {
+          nome: "Ataque Especial de Guerreiro (1 PM)",
+          tipoAcao: "Livre (1 nível de Guerreiro)",
+          desc: "Gasta 1 PM para somar +4 no teste de ataque ou +4 na rolagem de dano do golpe."
+        },
+        {
+          nome: "Estilo Dançarino Marcial / Arma Arcana",
+          tipoAcao: "Passiva",
+          desc: "Usa seu modificador de Inteligência (+5) nas jogadas de Luta em vez de Força, tornando seus ataques com machado cirúrgicos e precisos."
+        },
+        {
+          nome: "Resistência a Magia Élfica & Abascanto (+9 Total)",
+          tipoAcao: "Passiva",
+          desc: "Soma +9 em absolutamente todos os testes de Fortitude (+20), Reflexos (+22) e Vontade (+17) contra efeitos mágicos."
+        },
+        {
+          nome: "Habitante do Deserto (Divindade: Azgher)",
+          tipoAcao: "Passiva",
+          desc: "Imunidade ao calor extremo e suporte divino à sua imensa resistência contra fogo."
+        },
+        {
+          nome: "Emboscada Ilusória da Cela (+4 Defesa)",
+          tipoAcao: "Especial",
+          desc: "Se o grupo não desmascarar a Falsa Mara/Cassandra antes de entrar na cela, Varek ganha 1 rodada de surpresa e 2 reflexos ilusórios ativos (+4 na Defesa na 1ª rodada = Defesa 34)."
+        }
+      ]
+    },
+    equipamentos: [
+      "Machado de Batalha Anátema Certeiro Pungente (Arma Mágica ativa, 2d8+3d6+7 corte, crítico 20/x3)",
+      "Escudo Pesado Abascanto Reforçado Rúnico (+3 Defesa, +2 contra magias)",
+      "Robe Mágico Magistral (+3 Misticismo)",
+      "Chapéu Mágico Magistral (+3 Misticismo)",
+      "Símbolo Sagrado de Azgher (+1 em todas as resistências)",
+      "Máscara de Varek (Item Chave de Espólio: Disfarce Ilusório e percepção de ilusões)",
+      "Contrato Secreto de Severian (Documento crucial que prova a conspiração)",
+      "Frascos vazios de Poções de Mana utilizadas na preparação prévia"
+    ],
+    taticas: "Varek foi contratado por Severian para caçar o grupo e proteger a farsa na cela dos Confiscados. Ele opera sob o lema de nunca falhar: acorda, casta todos os seus buffs duradouros (Armadura Arcana, Arma Mágica, Resistência a Energia Fogo 40), toma poções de mana e aguarda com 58 PM no ápice. No combate, Varek ativa Concentração de Combate (1 PM) para ter Vantagem em todas as jogadas de ataque. Ele combeia Ataque Arcano canalizando Toque Chocante de 12 PM em seu Machado de Batalha (2d8+3d6+7 + 11d8+13 elétrico), podendo repetir o golpe no mesmo turno! Defensivamente, ele usa Contramágica Aprimorada (+21 Misticismo) para anular magias de início. Se uma magia passar, tenta Aparar Magia com o Machado (+13) para rebater o feitiço contra o próprio conjurador. Se o grupo o levar a 0 PV ou deixá-lo inconsciente, sua Runa de Proteção dispara automaticamente como uma 'bomba' de 11d8+13 em área!",
+    roleplay: {
+      personalidade: "Frio, metódico e profissional. Não subestima seus alvos e confia cegamente em suas preparações mágicas e bênçãos de Azgher.",
+      motivacao: "Cumprir seu contrato com Severian, receber a vultosa recompensa em tibares e eliminar ameaças mágicas.",
+      citacao: "'Severian pagou adiantado e eu nunca deixo um serviço pela metade. Minha lâmina já sentenciou conjuradores muito mais velhos que vocês.'",
+      notasMestre: "Deixe claro para os jogadores o perigo do combate quando os primeiros arcos de eletricidade crepitarem no machado. Se Varek for encurralado aos 30 PV, ele pode negociar a entrega da máscara e do contrato de Severian em troca da vida. Se morrer ou for abatido, ALERTE IMEDIATAMENTE sobre a explosão da Runa Homem-Bomba!"
+    }
+  },
+
+  sandro: {
+    id: "sandro",
+    name: "Sargento Sandro & Guarda dos Estábulos",
+    role: "Capitão Mercenário da Guarda Externa",
+    category: "antagonista",
+    nd: 5,
+    tipo: "Humano, Soldado Veterano / Mercenário",
+    tamanho: "Médio",
+    deslocamento: "9m",
+    description: "Sargento mercenário contratado pela Inquisição para guarnecer os estábulos e as rotas de carga de Milothiann. Homem experiente e cínico que pode ser subornado, enganado ou combatido.",
+    atributos: {
+      for: 16,
+      des: 14,
+      con: 16,
+      int: 10,
+      sab: 12,
+      car: 10
+    },
+    pericias: [
+      { nome: "Luta", mod: 12 },
+      { nome: "Intimidação", mod: 11 },
+      { nome: "Percepção", mod: 9 },
+      { nome: "Iniciativa", mod: 8 },
+      { nome: "Fortitude", mod: 10 }
+    ],
+    combatStats: {
+      pv: 65,
+      pm: 12,
+      defesa: 22,
+      iniciativa: 8,
+      rd: 3,
+      ataques: [
+        {
+          nome: "Alabarda Mercenária Pesada",
+          teste: "Luta +12",
+          mod: 12,
+          dano: "1d10+7",
+          tipo: "Corte / Perfuração",
+          alcance: "Corpo a corpo (alcance 3m)",
+          critico: "x3",
+          especial: "Permite manobra Desarmar ou Derrubar com +2 no teste."
+        },
+        {
+          nome: "Besta Pesada com Virola de Aço",
+          teste: "Pontaria +10",
+          mod: 10,
+          dano: "1d12+5",
+          tipo: "Perfuração",
+          alcance: "Médio (30m)",
+          critico: "19/x2"
+        }
+      ],
+      habilidades: [
+        {
+          nome: "Formação de Piqueiros",
+          tipoAcao: "Passiva",
+          desc: "Ganha +2 na Defesa e +2 no dano para cada soldado mercenário adjacente."
+        },
+        {
+          nome: "Olho para Ouro & Risco",
+          tipoAcao: "Social",
+          desc: "Se os heróis oferecerem mais de 100 T$ ou uma saída segura, a CD de Diplomacia/Suborno reduz de 20 para 16."
+        }
+      ]
+    },
+    equipamentos: [
+      "Brunea reforçada e elmo com pluma desgastada",
+      "Alabarda de infantaria",
+      "Besta Pesada com 20 virotes",
+      "Bolsa de moedas e dados de aposta"
+    ],
+    taticas: "Sandro posiciona seus homens em estrangulamentos nas portas dos estábulos, usando o alcance das alabardas para manter os heróis longe.",
+    roleplay: {
+      personalidade: "Pragmático. Não quer morrer por uma causa fanática de Severian, apenas quer ser pago.",
+      citacao: "'Eu sou pago para vigiar cavalos e cargas, não para virar comida de monstro arcano. Dependendo da oferta de vocês, posso fingir que fui ao banheiro.'"
+    }
+  },
+
+  guardas_milothiann: {
+    id: "guardas_milothiann",
+    name: "Soldados Inquisitoriais de Milothiann",
+    role: "Guarda Pessoal e Tropa de Choque da Inquisição",
+    category: "ameaca",
+    nd: 3,
+    tipo: "Humanos, Tropa Inquisitorial",
+    tamanho: "Médio",
+    deslocamento: "9m",
+    description: "Guardas fanáticos treinados para subjugar conjuradores e hereges. Equipados com grilhões antimagia, escudos e cimitarras.",
+    atributos: {
+      for: 14,
+      des: 12,
+      con: 14,
+      int: 10,
+      sab: 10,
+      car: 10
+    },
+    pericias: [
+      { nome: "Luta", mod: 8 },
+      { nome: "Percepção", mod: 6 },
+      { nome: "Iniciativa", mod: 5 },
+      { nome: "Fortitude", mod: 7 }
+    ],
+    combatStats: {
+      pv: 32,
+      defesa: 19,
+      iniciativa: 5,
+      rd: 2,
+      ataques: [
+        {
+          nome: "Espada Longa Inquisitorial",
+          teste: "Luta +8",
+          mod: 8,
+          dano: "1d8+4",
+          tipo: "Corte",
+          alcance: "Corpo a corpo",
+          critico: "19/x2"
+        },
+        {
+          nome: "Grilhões de Ferro Frio",
+          teste: "Manobra Agarrar +9",
+          mod: 9,
+          dano: "Especial",
+          tipo: "Imobilização",
+          alcance: "Corpo a corpo",
+          especial: "Se prender um conjurador, este precisa de Concentração CD 20 para lançar magias."
+        }
+      ],
+      habilidades: [
+        {
+          nome: "Fanatismo Cego",
+          tipoAcao: "Passiva",
+          desc: "+2 em testes de Vontade contra intimidação e medo enquanto Severian estiver vivo."
+        }
+      ]
+    },
+    equipamentos: [
+      "Cota de malha com tabardo de Khorcova",
+      "Escudo de aço com olho inquisitorial",
+      "Espada longa e grilhões pesados"
+    ]
+  },
+
+  acolitos_pilonos: {
+    id: "acolitos_pilonos",
+    name: "Acólitos e Canalizadores dos Pilonos",
+    role: "Cultistas e Conjuradores de Apoio no Ritual",
+    category: "ameaca",
+    nd: 4,
+    tipo: "Humanos, Cultistas Arcanos",
+    tamanho: "Médio",
+    deslocamento: "9m",
+    description: "Conjuradores encapuzados posicionados nos 4 pilonos de Milothiann, entoando cânticos profanos para abastecer a barreira de Severian.",
+    atributos: {
+      for: 10,
+      des: 14,
+      con: 12,
+      int: 16,
+      sab: 14,
+      car: 12
+    },
+    pericias: [
+      { nome: "Misticismo", mod: 11 },
+      { nome: "Iniciativa", mod: 8 },
+      { nome: "Vontade", mod: 9 }
+    ],
+    combatStats: {
+      pv: 28,
+      pm: 20,
+      defesa: 16,
+      iniciativa: 8,
+      rd: 0,
+      ataques: [
+        {
+          nome: "Raio Necrótico do Pilono",
+          teste: "Pontaria +9",
+          mod: 9,
+          dano: "2d8+3",
+          tipo: "Trevas",
+          alcance: "Médio (30m)",
+          critico: "x2"
+        }
+      ],
+      magias: [
+        {
+          nome: "Alimentar o Pilono",
+          custoPM: 2,
+          escola: "Necromancia",
+          desc: "Ação Padrão: Concede +10 PV de cura imediata e +5 de RD para Severian."
+        },
+        {
+          nome: "Névoa de Desespero",
+          custoPM: 2,
+          cd: 17,
+          escola: "Ilusão",
+          desc: "Cria área de 6m onde heróis ficam Abalados (-2 em testes)."
+        }
       ]
     }
   },
+
+  sombras_retornados: {
+    id: "sombras_retornados",
+    name: "Sombras da Névoa & Retornados de Milothiann",
+    role: "Criaturas Rituais e Almas Aprisionadas",
+    category: "ameaca",
+    nd: 4,
+    tipo: "Morto-Vivo, Incorpóreo / Corrompido",
+    tamanho: "Médio",
+    deslocamento: "Voo 12m",
+    description: "Espíritos atormentados dos antigos servos e prisioneiros de Milothiann, erguidos pela presença de Ferren para cercar a fortaleza.",
+    atributos: {
+      for: 10,
+      des: 18,
+      con: 14,
+      int: 6,
+      sab: 10,
+      car: 14
+    },
+    combatStats: {
+      pv: 36,
+      defesa: 20,
+      iniciativa: 10,
+      rd: "Incorpóreo (Metade do dano de ataques físicos)",
+      sentidos: "Visão no Escuro 18m, Percepção às Cegas de Mana 9m",
+      imunidades: ["Imunidades de Morto-Vivo (veneno, sono, paralisia, atordoamento, sangramento)"],
+      ataques: [
+        {
+          nome: "Toque Congelante da Alma",
+          teste: "Toque +10",
+          mod: 10,
+          dano: "2d6+4 frio + 1d4 drenagem de Força",
+          tipo: "Frio + Trevas",
+          alcance: "Corpo a corpo",
+          critico: "x2",
+          especial: "Fortitude CD 16 reduz o dano de frio e anula a drenagem de Força."
+        }
+      ],
+      habilidades: [
+        {
+          nome: "Incorpóreo",
+          tipoAcao: "Passiva",
+          desc: "Pode atravessar paredes, portas trancadas e obstáculos sólidos livremente."
+        }
+      ]
+    }
+  },
+
   ferren: {
+    id: "ferren",
     name: "Ferren, a Entidade da Ascensão Profana",
-    role: "Divindade em Ascensão / Escala S",
-    description: "Colosso divino que transcende o plano mortal. Sua presença altera o clima, o solo e ressuscita os mortos. Inatingível por ataques mortais.",
+    role: "Divindade em Ascensão / Colosso Apocalíptico (Escala S)",
+    category: "antagonista",
+    nd: "Escala S (Divindade)",
+    tipo: "Entidade Divina / Avatar Cósmico",
+    tamanho: "Colossal (mais de 50 metros)",
+    deslocamento: "Voo 30m / Teletransporte",
+    description: "A entidade cultuada por Severian nos subterrâneos de Milothiann. Quando os 4 Pilonos Arcanos entram em ressonância e o ritual atinge o ápice, o céu se racha em púrpura e a silhueta titânica de Ferren emerge da terra, distorcendo a gravidade, o clima e a própria realidade. Não pode ser derrotada por lâminas ou magias mortais — o objetivo no Ato III é a fuga desesperada!",
+    atributos: {
+      for: 36,
+      des: 20,
+      con: 40,
+      int: 30,
+      sab: 30,
+      car: 30
+    },
+    pericias: [
+      { nome: "Misticismo", mod: 25 },
+      { nome: "Vontade", mod: 25 },
+      { nome: "Iniciativa", mod: 20 },
+      { nome: "Intimidação", mod: 25 }
+    ],
     combatStats: {
       pv: "Infinito (Escala S)",
-      defesa: "Inviolável",
+      pm: "Infinito",
+      defesa: "Inviolável (38+)",
+      iniciativa: 20,
+      rd: "50 contra qualquer ataque mortal",
+      sentidos: "Onipresença local, Visão Total em todo o mapa de Milothiann",
+      imunidades: ["Imunidade a todas as magias, venenos, doenças, morte súbita, controle mental e paralisia"],
+      ataques: [
+        {
+          nome: "Golpe Sísmico do Braço de Trevas",
+          teste: "Ataque em Área (Raio de 18m)",
+          mod: 25,
+          dano: "10d10+30",
+          tipo: "Impacto + Trevas",
+          alcance: "Longo (120m)",
+          critico: "x3",
+          especial: "Destrói estruturas, muralhas e pontes instantaneamente. Reflexos CD 28 reduz à metade."
+        },
+        {
+          nome: "Raio da Desintegração de Mana",
+          teste: "Linha de 60m",
+          mod: 22,
+          dano: "8d12",
+          tipo: "Essência Corrompida",
+          alcance: "Longo",
+          especial: "Desintegra objetos e queima 2d6 PM de cada herói na linha."
+        }
+      ],
       habilidades: [
-        "Presença Apocalíptica: Toda a região de Milothiann sofre 2d6 de trevas e calor asfixiante a cada hora.",
-        "Desintegração Espontânea: Qualquer projétil ou magia mortal direcionada a Ferren se desfaz em cinzas a 50m."
+        {
+          nome: "Presença Apocalíptica da Ascensão",
+          tipoAcao: "Aura Contínua (Todo o Ato III)",
+          desc: "Toda a região ao redor de Milothiann entra em colapso sísmico. A cada rodada na fuga, os heróis precisam de testes de Atletismo/Acrobacia/Reflexos para desviar de escombros em chamas."
+        },
+        {
+          nome: "O Despertar dos Retornados",
+          tipoAcao: "Automática",
+          desc: "Ergue 1d4+2 Sombras e Retornados a cada 2 rodadas da terra rachada."
+        },
+        {
+          nome: "A Cicatriz de Cassandra",
+          tipoAcao: "Vínculo Místico",
+          desc: "Quando Cassandra usa sua Fagulha ou Desejo para abrir caminho na ponte, Ferren sente sua linhagem e tenta atraí-la, criando o clímax de sacrifício e decisão do Ato III."
+        }
       ]
+    },
+    taticas: "Ferren não é um monstro para combate equilibrado. Ele funciona como uma força da natureza / evento cataclísmico vivo. O mestre deve descrever o estrondo ensurdecedor de seus passos, os relâmpagos púrpuras e o desmoronamento das torres para criar tensão máxima durante a fuga pelo desfiladeiro e pela ponte!",
+    roleplay: {
+      personalidade: "Uma inteligência ancestral e cósmica que enxerga os mortais como formigas em sua marcha de renascimento.",
+      citacao: "'O PÓ RETORNA AO PÓ... E A LINHAGEM DOS CRANE ALIMENTARÁ A ETERNIDADE.'",
+      notasMestre: "Use Ferren para ditar o ritmo frenético do Ato III. Não permita que os jogadores pensem em 'bater nele' — tudo o que fizerem deve ser focado em correr, desarmar passagens, proteger Cassandra e atravessar a ponte antes que tudo desabe!"
     }
   }
 };

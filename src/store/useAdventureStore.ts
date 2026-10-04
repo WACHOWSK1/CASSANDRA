@@ -15,6 +15,12 @@ import {
   INITIAL_GROUP_CONDITIONS 
 } from '@/data/adventureData';
 
+import { 
+  GOOD_TRAVEL_EVENTS, 
+  BAD_TRAVEL_EVENTS, 
+  TravelEvent 
+} from '@/data/travelData';
+
 interface ChallengeState {
   active: boolean;
   successes: number;
@@ -27,6 +33,26 @@ interface BossState {
   totalPilonos: number;
   pilonosDestruidos: number;
   pilonoInativoFagulha: boolean;
+}
+
+export type PylonStatus = 'ativo' | 'invertido' | 'destruido' | 'tombado';
+
+export interface PylonItem {
+  id: number;
+  nome: string;
+  posicao: string;
+  status: PylonStatus;
+}
+
+export interface TravelState {
+  diasViagem: number;
+  horasViagem: number;
+  racoesRestantes: number;
+  carrocaCondicao: 'integra' | 'avariada' | 'reparada';
+  salvoCondutoAtivo: boolean;
+  pvTempBonus: number;
+  ultimoEvento: TravelEvent | null;
+  historicoEventos: TravelEvent[];
 }
 
 interface AdventureStoreState {
@@ -44,15 +70,45 @@ interface AdventureStoreState {
   currentChallenge: ChallengeState;
   diceRollResult: { total: number; breakdown: string } | null;
   selectedNPCForModal: string | null;
+  selectedItemForModal: string | null;
   isExportModalOpen: boolean;
   soundEnabled: boolean;
   audioViewActive: boolean;
+
+  // Novos Estados Operacionais (Alerta, Transferência, Pilonos e Lanternas)
+  transferClock: number; // 0, 1, 2, 3
+  activeRightTab: 'alertas' | 'antimagia' | 'documentos';
+  pylonsList: PylonItem[];
+  lanternasState: {
+    total: number;
+    ativas: number;
+    primeiraMagiaDenunciada: boolean;
+  };
+
+  // Status de Viagem (Eventos Bons e Ruins)
+  travelState: TravelState;
 
   // Actions
   chooseOption: (optionId: string) => void;
   stepBack: () => void;
   jumpToNode: (nodeId: string) => void;
   adjustAlert: (delta: number) => void;
+  setAlertLevel: (level: number) => void;
+  setTransferClock: (stage: number) => void;
+  advanceTransferClock: (delta: number) => void;
+  setPylonStatus: (id: number, status: PylonStatus) => void;
+  toggleLanternaActive: (delta: number) => void;
+  setLanternaDenunciou: (denunciou: boolean) => void;
+  setActiveRightTab: (tab: 'alertas' | 'antimagia' | 'documentos') => void;
+  
+  // Ações de Viagem
+  drawTravelEvent: (type: 'bom' | 'ruim') => TravelEvent;
+  applyTravelEventBonus: (event: TravelEvent) => void;
+  setTravelDays: (days: number) => void;
+  adjustTravelHours: (delta: number) => void;
+  adjustRacoes: (delta: number) => void;
+  setCarrocaCondicao: (cond: 'integra' | 'avariada' | 'reparada') => void;
+  toggleSalvoConduto: () => void;
   setActView: (act: number) => void;
   toggleAudioView: () => void;
   registerChallengeResult: (type: 'success' | 'failure') => void;
@@ -62,6 +118,9 @@ interface AdventureStoreState {
   togglePylonManual: (index: number) => void;
   openNPCModal: (npcId: string) => void;
   closeNPCModal: () => void;
+  openItemModal: (itemId: string) => void;
+  closeItemModal: () => void;
+  toggleResourceItem: (key: keyof AdventureResources) => void;
   setExportModalOpen: (open: boolean) => void;
   toggleSound: () => void;
   resetSession: () => void;
@@ -103,9 +162,37 @@ export const useAdventureStore = create<AdventureStoreState>()(
       },
       diceRollResult: null,
       selectedNPCForModal: null,
+      selectedItemForModal: null,
       isExportModalOpen: false,
       soundEnabled: true,
       audioViewActive: false,
+
+      // Inicialização dos novos sistemas
+      transferClock: 0,
+      activeRightTab: 'alertas',
+      pylonsList: [
+        { id: 1, nome: "Pilono Norte (Chama Celeste)", posicao: "Norte do Altar", status: "ativo" },
+        { id: 2, nome: "Pilono Leste (Chama da Essência)", posicao: "Leste do Altar", status: "ativo" },
+        { id: 3, nome: "Pilono Sul (Chama Rúnica)", posicao: "Sul do Altar", status: "ativo" },
+        { id: 4, nome: "Pilono Oeste (Chama de Sangue)", posicao: "Oeste do Altar", status: "ativo" }
+      ],
+      lanternasState: {
+        total: 2,
+        ativas: 2,
+        primeiraMagiaDenunciada: false
+      },
+
+      // Inicialização do Sistema de Viagem
+      travelState: {
+        diasViagem: 1,
+        horasViagem: 6,
+        racoesRestantes: 18,
+        carrocaCondicao: 'integra',
+        salvoCondutoAtivo: false,
+        pvTempBonus: 0,
+        ultimoEvento: null,
+        historicoEventos: []
+      },
 
       getCurrentNode: () => {
         const id = get().currentNodeId;
@@ -217,17 +304,76 @@ export const useAdventureStore = create<AdventureStoreState>()(
 
       adjustAlert: (delta) => {
         set((state) => {
-          const newAlert = Math.max(0, state.alertLevel + delta);
+          const newAlert = Math.min(6, Math.max(0, state.alertLevel + delta));
           const time = new Date().toLocaleTimeString();
           const logMsg = delta > 0 
             ? `[${time}] ⚠️ Nível de Alerta aumentou para ${newAlert} (+${delta}).`
             : `[${time}] Nível de Alerta reduzido para ${newAlert}.`;
+
+          let newTransfer = state.transferClock;
+          if (newAlert >= 5 && state.alertLevel < 5 && state.transferClock < 3) {
+            newTransfer = Math.min(3, state.transferClock + 1);
+          }
+
           return {
             alertLevel: newAlert,
+            transferClock: newTransfer,
             chronicle: [...state.chronicle, logMsg]
           };
         });
       },
+
+      setAlertLevel: (level) => {
+        const clamped = Math.min(6, Math.max(0, level));
+        set((state) => {
+          let newTransfer = state.transferClock;
+          if (clamped >= 5 && state.alertLevel < 5 && state.transferClock < 3) {
+            newTransfer = Math.min(3, state.transferClock + 1);
+          }
+          return {
+            alertLevel: clamped,
+            transferClock: newTransfer,
+            chronicle: [...state.chronicle, `[${new Date().toLocaleTimeString()}] Nível de Alerta ajustado para ${clamped}.`]
+          };
+        });
+      },
+
+      setTransferClock: (stage) => set({ transferClock: Math.min(3, Math.max(0, stage)) }),
+      advanceTransferClock: (delta) => set((s) => ({ transferClock: Math.min(3, Math.max(0, s.transferClock + delta)) })),
+
+      setPylonStatus: (id, status) => {
+        set((state) => {
+          const updated = state.pylonsList.map(p => p.id === id ? { ...p, status } : p);
+          const destroyedOrNeutralized = updated.filter(p => p.status !== 'ativo').length;
+          return {
+            pylonsList: updated,
+            bossState: {
+              ...state.bossState,
+              pilonosDestruidos: destroyedOrNeutralized
+            }
+          };
+        });
+      },
+
+      toggleLanternaActive: (delta) => {
+        set((state) => ({
+          lanternasState: {
+            ...state.lanternasState,
+            ativas: Math.min(state.lanternasState.total, Math.max(0, state.lanternasState.ativas + delta))
+          }
+        }));
+      },
+
+      setLanternaDenunciou: (denunciou) => {
+        set((state) => ({
+          lanternasState: {
+            ...state.lanternasState,
+            primeiraMagiaDenunciada: denunciou
+          }
+        }));
+      },
+
+      setActiveRightTab: (tab) => set({ activeRightTab: tab }),
 
       registerChallengeResult: (type) => {
         const { currentChallenge } = get();
@@ -284,10 +430,13 @@ export const useAdventureStore = create<AdventureStoreState>()(
 
       destruirPilono: () => {
         set((state) => {
-          const destroyed = state.bossState.pilonosDestruidos;
-          if (destroyed < state.bossState.totalPilonos) {
+          const firstActive = state.pylonsList.find(p => p.status === 'ativo');
+          if (firstActive) {
+            const updated = state.pylonsList.map(p => p.id === firstActive.id ? { ...p, status: 'destruido' as PylonStatus } : p);
+            const destroyedCount = updated.filter(p => p.status !== 'ativo').length;
             return {
-              bossState: { ...state.bossState, pilonosDestruidos: destroyed + 1 },
+              pylonsList: updated,
+              bossState: { ...state.bossState, pilonosDestruidos: destroyedCount },
               chronicle: [...state.chronicle, `[${new Date().toLocaleTimeString()}] 💥 Pilono Arcano destruído! RD e Regeneração de Severian enfraquecidas.`]
             };
           }
@@ -296,24 +445,158 @@ export const useAdventureStore = create<AdventureStoreState>()(
       },
 
       inverterRunas: () => {
-        const dano = Math.floor(Math.random() * 25) + 10;
-        set((state) => ({
-          chronicle: [...state.chronicle, `[${new Date().toLocaleTimeString()}] 🔮 Runas Invertidas com sucesso: O raio rebateu em Severian causando ${dano} de dano!`]
-        }));
+        set((state) => {
+          const firstActive = state.pylonsList.find(p => p.status === 'ativo');
+          const dano = Math.floor(Math.random() * 25) + 10;
+          if (firstActive) {
+            const updated = state.pylonsList.map(p => p.id === firstActive.id ? { ...p, status: 'invertido' as PylonStatus } : p);
+            const destroyedCount = updated.filter(p => p.status !== 'ativo').length;
+            return {
+              pylonsList: updated,
+              bossState: { ...state.bossState, pilonosDestruidos: destroyedCount },
+              chronicle: [...state.chronicle, `[${new Date().toLocaleTimeString()}] 🔮 Runas do ${firstActive.nome} Invertidas com sucesso: O raio rebateu em Severian causando ${dano} de dano! Cria área segura de 3m.`]
+            };
+          }
+          return state;
+        });
       },
 
       togglePylonManual: (index) => {
         set((state) => {
-          const destroyed = state.bossState.pilonosDestruidos;
-          const next = index <= destroyed ? destroyed - 1 : destroyed + 1;
+          const pylon = state.pylonsList[index];
+          if (!pylon) return state;
+          const nextStatus: PylonStatus = pylon.status === 'ativo' ? 'destruido' : 'ativo';
+          const updated = state.pylonsList.map((p, i) => i === index ? { ...p, status: nextStatus } : p);
+          const destroyedCount = updated.filter(p => p.status !== 'ativo').length;
           return {
-            bossState: { ...state.bossState, pilonosDestruidos: next }
+            pylonsList: updated,
+            bossState: { ...state.bossState, pilonosDestruidos: destroyedCount }
           };
         });
       },
 
+      // Implementação das Ações de Viagem (Eventos Bons e Ruins)
+      drawTravelEvent: (type) => {
+        const pool = type === 'bom' ? GOOD_TRAVEL_EVENTS : BAD_TRAVEL_EVENTS;
+        const randomIndex = Math.floor(Math.random() * pool.length);
+        const event = pool[randomIndex];
+
+        set((state) => {
+          const time = new Date().toLocaleTimeString();
+          const logMsg = `[${time}] 🎲 Evento de Viagem (${type === 'bom' ? '🌟 BOM' : '💀 RUIM'}): ${event.titulo}`;
+          
+          return {
+            travelState: {
+              ...state.travelState,
+              ultimoEvento: event,
+              historicoEventos: [event, ...state.travelState.historicoEventos.slice(0, 9)]
+            },
+            chronicle: [...state.chronicle, logMsg]
+          };
+        });
+
+        return event;
+      },
+
+      applyTravelEventBonus: (event) => {
+        set((state) => {
+          const newTravel = { ...state.travelState };
+          const newConditions = { ...state.groupConditions };
+          const newResources = { ...state.resources };
+
+          if (event.aplicarEfeito?.tipo === 'cura_total') {
+            newConditions.fatigado = false;
+            newConditions.fraco = false;
+          } else if (event.aplicarEfeito?.tipo === 'salvo_conduto') {
+            newTravel.salvoCondutoAtivo = true;
+          } else if (event.aplicarEfeito?.tipo === 'condicao_fatigado') {
+            newConditions.fatigado = true;
+          } else if (event.aplicarEfeito?.tipo === 'condicao_fraco') {
+            newConditions.fraco = true;
+          } else if (event.aplicarEfeito?.tipo === 'carroca_avariada') {
+            newTravel.carrocaCondicao = 'avariada';
+          } else if (event.aplicarEfeito?.tipo === 'racoes_perdidas') {
+            newTravel.racoesRestantes = Math.max(0, newTravel.racoesRestantes - (typeof event.aplicarEfeito.valor === 'number' ? event.aplicarEfeito.valor : 2));
+          } else if (event.aplicarEfeito?.tipo === 'pv_temp') {
+            newTravel.pvTempBonus = (newTravel.pvTempBonus || 0) + 10;
+          }
+
+          return {
+            travelState: newTravel,
+            groupConditions: newConditions,
+            resources: newResources,
+            chronicle: [...state.chronicle, `[${new Date().toLocaleTimeString()}] Efeito aplicado: ${event.titulo}`]
+          };
+        });
+      },
+
+      setTravelDays: (days) => {
+        set((s) => ({ travelState: { ...s.travelState, diasViagem: Math.max(0, days) } }));
+      },
+
+      adjustTravelHours: (delta) => {
+        set((s) => {
+          const totalHours = Math.max(0, s.travelState.horasViagem + delta);
+          const days = Math.floor(totalHours / 12) + 1;
+          return {
+            travelState: {
+              ...s.travelState,
+              horasViagem: totalHours,
+              diasViagem: days
+            }
+          };
+        });
+      },
+
+      adjustRacoes: (delta) => {
+        set((s) => ({
+          travelState: {
+            ...s.travelState,
+            racoesRestantes: Math.max(0, s.travelState.racoesRestantes + delta)
+          }
+        }));
+      },
+
+      setCarrocaCondicao: (cond) => {
+        set((s) => ({
+          travelState: {
+            ...s.travelState,
+            carrocaCondicao: cond
+          }
+        }));
+      },
+
+      toggleSalvoConduto: () => {
+        set((s) => ({
+          travelState: {
+            ...s.travelState,
+            salvoCondutoAtivo: !s.travelState.salvoCondutoAtivo
+          }
+        }));
+      },
+
       openNPCModal: (npcId) => set({ selectedNPCForModal: npcId }),
       closeNPCModal: () => set({ selectedNPCForModal: null }),
+      openItemModal: (itemId) => set({ selectedItemForModal: itemId }),
+      closeItemModal: () => set({ selectedItemForModal: null }),
+
+      toggleResourceItem: (key) => {
+        set((state) => {
+          const currentVal = state.resources[key];
+          let newVal: any;
+          if (typeof currentVal === 'boolean') newVal = !currentVal;
+          else if (typeof currentVal === 'number') newVal = currentVal > 0 ? 0 : 3;
+          else newVal = currentVal ? null : 'sabotada';
+
+          return {
+            resources: {
+              ...state.resources,
+              [key]: newVal
+            }
+          };
+        });
+      },
+
       setExportModalOpen: (open) => set({ isExportModalOpen: open }),
       toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),
 
@@ -336,6 +619,31 @@ export const useAdventureStore = create<AdventureStoreState>()(
         chronicle: [`[${new Date().toLocaleTimeString()}] Sessão reiniciada: Partida de Yuvalin rumo a Milothiann.`],
         currentChallenge: { active: false, successes: 0, failures: 0, config: null },
         diceRollResult: null,
+        selectedNPCForModal: null,
+        selectedItemForModal: null,
+        transferClock: 0,
+        activeRightTab: 'alertas',
+        pylonsList: [
+          { id: 1, nome: "Pilono Norte (Chama Celeste)", posicao: "Norte do Altar", status: "ativo" },
+          { id: 2, nome: "Pilono Leste (Chama da Essência)", posicao: "Leste do Altar", status: "ativo" },
+          { id: 3, nome: "Pilono Sul (Chama Rúnica)", posicao: "Sul do Altar", status: "ativo" },
+          { id: 4, nome: "Pilono Oeste (Chama de Sangue)", posicao: "Oeste do Altar", status: "ativo" }
+        ],
+        lanternasState: {
+          total: 2,
+          ativas: 2,
+          primeiraMagiaDenunciada: false
+        },
+        travelState: {
+          diasViagem: 1,
+          horasViagem: 6,
+          racoesRestantes: 18,
+          carrocaCondicao: 'integra',
+          salvoCondutoAtivo: false,
+          pvTempBonus: 0,
+          ultimoEvento: null,
+          historicoEventos: []
+        }
       })
     }),
     {

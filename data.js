@@ -990,30 +990,30 @@ const ADVENTURE_DATA = {
         "VF": {
             id: "VF",
             act: 2,
-            title: "Confronto Tático: Varek (Algoz de Severian)",
+            title: "Confronto Tático: Varek, o Caçador Arcano",
             type: "combat_arena",
-            summary: "Varek (PV 120, Defesa 26, Furtividade +15). Gerencie as condições de término do combate.",
-            narration: "Varek salta entre as vigas e os caixotes de relíquias confiscadas, usando fumaça alquímica e lâminas envenenadas.",
+            summary: "Varek (ND 8, PV 58/120, PM 58, Defesa 30/34, RD Fogo 40, RD Física 5). Caçador arcano com combo brutal de Toque Chocante (11d8+13) no Machado de Batalha com vantagem, Contramágica (+21), Aparar Magia (+13) e Runa Homem-Bomba aos 0 PV.",
+            narration: "A ilusão se desfaz em centelhas douradas e fumaça fria! Varek empunha seu machado de batalha rúnico e ergue o escudo pesado com os raios solares de Azgher gravados no metal. Faíscas elétricas de alta voltagem crepitam ao longo do fio da lâmina enquanto ele fecha a passagem: 'Severian me pagou muito bem para garantir que ninguém saia vivo deste corredor. Vocês não passarão!'",
             combatConfig: {
-                enemy: "Varek, o Metamorfo",
+                enemy: "Varek, o Caçador Arcano",
                 pv: 120,
-                defesa: 26,
+                defesa: 30,
                 thresholds: [
-                    { pv: 60, event: "Varek tenta fugir por um alçapão secreto para avisar Severian." },
-                    { pv: 30, event: "Se estiver cercado, Varek larga as adagas e se rende." },
-                    { pv: 0, event: "Varek é morto ou incapacitado de imediato." }
+                    { pv: 60, event: "Varek atinge 60 PV e tenta fugir pelo alçapão secreto lançando Amarras Etéreas para cobrir sua retirada." },
+                    { pv: 30, event: "Se encurralado aos 30 PV, Varek propõe rendição em troca da vida, entregando sua Máscara e o Contrato de Severian." },
+                    { pv: 0, event: "⚠️ GATILHO RUNA DE PROTEÇÃO (HOMEM-BOMBA): Ao cair a 0 PV ou desmaiar, Varek descarrega 11d8+13 de dano elétrico em área de 6m (Reflexos CD 19 reduz metade)!" }
                 ]
             },
             options: [
                 {
                     id: "VD_morto",
                     target: "VI",
-                    label: "Varek é morto ou incapacitado em combate direto",
-                    badge: "Sem Testemunha / Severian Desprevenido",
+                    label: "Varek é abatido em combate direto (Detona Runa Homem-Bomba)",
+                    badge: "Runa Detonada / Espólios Recuperados",
                     effects: {
                         npcStatus: { varek: "morto" },
                         resources: { mascaraVarek: true, contratoSeverian: true },
-                        log: "Varek foi derrotado e morto. Máscara de Varek e Contrato secreto de Severian recuperados. Severian não foi avisado."
+                        log: "Varek foi derrotado em combate! A Runa Homem-Bomba detonou. Máscara de Varek e Contrato secreto de Severian recuperados."
                     }
                 },
                 {
@@ -1024,13 +1024,13 @@ const ADVENTURE_DATA = {
                     effects: {
                         npcStatus: { varek: "rendido" },
                         resources: { mascaraVarek: true, contratoSeverian: true },
-                        log: "Varek se rendeu aos 30 PV sob ameaça de morte."
+                        log: "Varek se rendeu aos 30 PV sob ameaça de morte e entregou seus espólios sem detonar a runa."
                     }
                 },
                 {
                     id: "VD_fuga",
                     target: "VE_FUGA",
-                    label: "Varek atinge 60 PV e dispara em fuga em direção à Capela",
+                    label: "Varek atinge 60 PV e dispara em fuga pelo alçapão",
                     badge: "Tentativa de Fuga"
                 }
             ]
@@ -2373,17 +2373,23 @@ const ADVENTURE_DATA = {
             }
         },
         varek: {
-            name: "Varek, o Metamorfo",
-            role: "Assassino e Espião de Severian",
-            description: "Assassino frio capaz de mudar de forma e imitar vozes perfeitamente. Luta com agilidade acrobática e lâminas envenenadas.",
+            name: "Varek, o Caçador Arcano",
+            role: "Algoz de Severian / Arcanista Bruxo & Guerreiro de Azgher (ND 8)",
+            description: "Elfo Cativo das Fadas, Arcanista Bruxo 7 / Guerreiro 1 devoto de Azgher. Caçador com 58 PV/PM, Defesa 30 (34 emboscada), RD Fogo 40 e RD Física 5. Desfere combo brutal de Toque Chocante (11d8+13) em seu Machado de Batalha com vantagem permanente e Ataque Arcano duplo. Possui Contramágica (+21), Aparar Magia (+13) e Runa de Proteção Homem-Bomba ao cair a 0 PV.",
             combatStats: {
-                pv: 120,
-                defesa: 26,
-                iniciativa: 18,
+                pv: 58,
+                pm: 58,
+                defesa: 30,
+                iniciativa: 12,
+                rd: "RD Fogo 40 • RD Física 5",
                 habilidades: [
-                    "Adagas Duplas Envenenadas (+16/+16, dano 1d6+6 corte + 2d6 veneno de paralisia Fortitude CD 19).",
-                    "Disfarce Ilusório: Concede camuflagem e 2 reflexos ilusórios na 1ª rodada se não desmascarado.",
-                    "Bomba de Fumaça Alquímica (Movimento): Cria névoa densa e permite teste de Furtividade imediato."
+                    "⚡ Combo Toque Chocante + Machado (12 PM): Luta +13 c/ vantagem, dano 2d8+3d6+7 corte + 11d8+13 eletricidade. Pode atacar 2x por turno com Ataque Arcano!",
+                    "🛡️ Contramágica Aprimorada (Reação): Teste de Misticismo +21 contra a CD da magia inimiga para anulá-la.",
+                    "🪓 Aparar Magia & Rebater (Reação): Teste de Ataque +13 contra a CD da magia; se passar, reflete a magia no conjurador sem sofrer dano!",
+                    "💥 Runa de Proteção 'Homem-Bomba': Ao cair a 0 PV ou inconsciente, detona 11d8+13 de choque em raio de 6m (Reflexos CD 19 reduz metade).",
+                    "⛓️ Amarras Etéreas (3 PM, CD 19): Prende e imobiliza oponente à distância.",
+                    "✦ Resistência a Magia: +9 em TODOS os testes de resistência (Fort +20, Refl +22, Vont +17 vs Magias).",
+                    "✦ Defesas: RD Fogo 40 (Azgher/Energia), RD Física 5, Defesa 30 (34 na primeira rodada com reflexos de emboscada)."
                 ]
             }
         },
