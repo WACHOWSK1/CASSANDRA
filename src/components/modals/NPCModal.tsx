@@ -375,6 +375,37 @@ export const NPCModal: React.FC = () => {
                 </div>
               )}
 
+              {/* SENTIDOS, RESISTÊNCIAS & IMUNIDADES */}
+              {(currentNpc.combatStats.sentidos || (currentNpc.combatStats.resistencias && currentNpc.combatStats.resistencias.length > 0) || (currentNpc.combatStats.imunidades && currentNpc.combatStats.imunidades.length > 0)) && (
+                <div className="bg-[#0a0b10]/70 border border-[#48cae4]/30 rounded-xl p-3 space-y-2 text-xs">
+                  <div className="font-serif font-bold text-[#48cae4] uppercase tracking-wider flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-[#48cae4]" />
+                    <span>Sentidos, Resistências & Imunidades:</span>
+                  </div>
+
+                  <div className="space-y-1.5 text-gray-300">
+                    {currentNpc.combatStats.sentidos && (
+                      <div className="flex items-start gap-1.5">
+                        <Eye className="w-3.5 h-3.5 text-cyan-300 flex-shrink-0 mt-0.5" />
+                        <div><strong className="text-gray-200">Sentidos:</strong> {currentNpc.combatStats.sentidos}</div>
+                      </div>
+                    )}
+                    {currentNpc.combatStats.resistencias && currentNpc.combatStats.resistencias.length > 0 && (
+                      <div className="flex items-start gap-1.5">
+                        <Award className="w-3.5 h-3.5 text-amber-300 flex-shrink-0 mt-0.5" />
+                        <div><strong className="text-gray-200">Resistências & Salvaguardas:</strong> {currentNpc.combatStats.resistencias.join(' • ')}</div>
+                      </div>
+                    )}
+                    {currentNpc.combatStats.imunidades && currentNpc.combatStats.imunidades.length > 0 && (
+                      <div className="flex items-start gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-purple-300 flex-shrink-0 mt-0.5" />
+                        <div><strong className="text-gray-200">Imunidades:</strong> {currentNpc.combatStats.imunidades.join(', ')}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* ATAQUES & AÇÕES OFENSIVAS */}
               {currentNpc.combatStats.ataques && currentNpc.combatStats.ataques.length > 0 && (
                 <div className="bg-[#0a0b10]/80 border border-[#e63946]/30 rounded-xl p-3.5 space-y-2.5">

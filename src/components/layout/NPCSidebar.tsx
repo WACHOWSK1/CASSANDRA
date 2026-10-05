@@ -51,10 +51,10 @@ export const NPCSidebar: React.FC = () => {
     },
     {
       id: "ferren",
-      name: "Ferren (Entidade)",
-      role: "Avatar Cósmico",
-      nd: "Escala S",
-      stateBadge: 'Colosso Ato III',
+      name: "Arquilich Ferren Asloth",
+      role: "Soberano de Aslothia",
+      nd: "ND S",
+      stateBadge: 'Boss III (Escala S)',
       colorClass: 'bg-[#9d0208]/30 text-[#ff4d6d] border-[#ff4d6d]'
     }
   ];

@@ -7,6 +7,7 @@ import { ADVENTURE_NODES, ADVENTURE_ACTS } from '@/data/adventureData';
 import { ChallengeSimulator } from '@/components/challenge/ChallengeSimulator';
 import { BossArena } from '@/components/combat/BossArena';
 import { VarekCombatArena } from '@/components/combat/VarekCombatArena';
+import { FerrenCombatArena } from '@/components/combat/FerrenCombatArena';
 import { 
   BookOpen, 
   Lightbulb, 
@@ -159,9 +160,14 @@ export const SceneCard: React.FC = () => {
         <BossArena />
       )}
 
-      {/* Arena Tática de Combate contra Varek */}
+      {/* Arena de Combate contra Boss I (Varek) */}
       {node.id === "VF" && (
         <VarekCombatArena />
+      )}
+
+      {/* Arena de Combate contra Boss III (Ferren Asloth - Escala S) */}
+      {(node.id === "F1_ESCALA_S" || node.id === "BOSS_FERREN") && (
+        <FerrenCombatArena />
       )}
 
       {/* Opções e Ramificações (com liberdade de escolha ou salto direto) */}

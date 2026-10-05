@@ -1551,23 +1551,44 @@ export const ADVENTURE_NODES: Record<string, AdventureNode> = {
     act: 3,
     title: "O Cataclismo: A Ascensão Profana de Ferren Começa!",
     type: "choice",
-    summary: "O céu sobre Milothiann se abre em um vórtice carmesim. Ferren manifesta sua forma titânica (Escala S).",
-    narration: "A terra racha. Um rugido faz as torres desabarem. Do vórtice, Ferren flutua em correntes de fogo sombrio e mil olhos que tudo veem.",
+    summary: "O céu sobre Milothiann se abre em um vórtice carmesim. Ferren manifesta sua forma titânica de Arquilich (Escala S).",
+    narration: "A terra racha em abismos profundos. Um estrondo cósmico faz as torres desabarem. Do vórtice púrpura, o Arquilich Ferren Asloth emerge levitando, envolvido em correntes de trevas, com o Cajado da Destruição reluzindo em morte e olhos que tudo veem.",
     options: [
-      { id: "F_atacar", target: "F1_ESCALA_S", label: "Alguém do grupo tenta desferir um ataque contra Ferren!", badge: "Demonstração Escala S" },
-      { id: "F_fugir", target: "R_TRANSFORMA", label: "O grupo reconhece a escala colossal e foca na sobrevivência", badge: "Foco na Evacuação" }
+      { id: "F_atacar", target: "F1_ESCALA_S", label: "Desafiar o Arquilich e entrar em combate contra Ferren! (Boss III - Escala S)", badge: "Confronto Impossível" },
+      { id: "F_fugir", target: "R_TRANSFORMA", label: "Reconhecer a escala colossal e focar na sobrevivência / evacuação com Cassandra", badge: "Foco na Evacuação (Canônica)" }
     ]
   },
 
   "F1_ESCALA_S": {
     id: "F1_ESCALA_S",
     act: 3,
-    title: "A Demonstração da Escala S",
-    type: "outcome",
-    summary: "O ataque para no ar a 50m de Ferren e se decompõe em cinzas podres.",
-    effects: { log: "Ataque contra Ferren se decompôs no ar: Demonstração de Escala S." },
+    title: "Confronto do Cataclismo: Arquilich Ferren Asloth (Boss III - Escala S)",
+    type: "combat",
+    summary: "Confronto direto contra o Arquilich Ferren Asloth (ND S). A vitória em combate convencional é impossível (2.418 PV, 255 PM, Defesa 66, CD 57). O mestre dispõe desta arena interativa com rolagens de ataque, magias e reações épicas para demonstrar o abismo de poder e forçar o grupo a priorizar a fuga desesperada!",
+    narration: "O Arquilich Ferren Asloth levita sobre as ruínas de Milothiann. A gravidade ao seu redor colapsa, chamas arcanas púrpuras crepitam em seu manto e seus olhos cadavéricos encaram os heróis com desdém absoluto. 'Pobres efêmeros... vocês ousam erguer suas armas contra o senhor da morte? Cada batimento de seus corações é uma concessão minha!' Diante de vocês, o Cajado da Destruição ergue-se no ar.",
+    gmTips: "Utilize a Arena do Boss III abaixo caso os jogadores insistam em lutar contra Ferren. Deixe-os rolar dados para sentirem a Defesa 66 e a Presença Opressora (CD 55). Use feitiços como Ferver Sangue, Toque Vampírico e Despertar dos Mortos para impor respeito. Quando o pânico se instalar e o grupo perceber a invulnerabilidade de Ferren, acione o botão de 'Forçar Retirada Estratégica' para avançar a fuga épica com Cassandra!",
+    enemy: "Arquilich Ferren Asloth (ND S)",
+    effects: { log: "Confronto com Boss III iniciado: Arquilich Ferren Asloth (Escala S). Vitória impossível — sobrevivência é o objetivo!" },
     nextDecision: "R_TRANSFORMA",
-    options: [{ id: "F1_to_R", target: "R_TRANSFORMA", label: "Correr pelos escombros da cidade" }]
+    options: [
+      { id: "F1_to_R", target: "R_TRANSFORMA", label: "Reconhecer o abismo de poder e bater em retirada desesperada (Salvar Cassandra)", badge: "Evacuação Obrigatória" }
+    ]
+  },
+
+  "BOSS_FERREN": {
+    id: "BOSS_FERREN",
+    act: 3,
+    title: "Confronto do Cataclismo: Arquilich Ferren Asloth (Boss III - Escala S)",
+    type: "combat",
+    summary: "Confronto direto contra o Arquilich Ferren Asloth (ND S). A vitória em combate convencional é impossível (2.418 PV, 255 PM, Defesa 66, CD 57).",
+    narration: "O Arquilich Ferren Asloth levita sobre as ruínas de Milothiann com seu manto de trevas desfraldado e o Cajado da Destruição crepitando com faíscas cósmicas.",
+    gmTips: "Demonstração viva da Escala S de Tormenta 20. Utilize a Arena de Combate para demonstrar o abismo e forçar a retirada estratégica com Cassandra.",
+    enemy: "Arquilich Ferren Asloth (ND S)",
+    effects: { log: "Confronto com Boss III iniciado: Arquilich Ferren Asloth (Escala S)." },
+    nextDecision: "R_TRANSFORMA",
+    options: [
+      { id: "BF_to_R", target: "R_TRANSFORMA", label: "Bater em retirada estratégica com Cassandra e evacuar", badge: "Evacuação Obrigatória" }
+    ]
   },
 
   "R_TRANSFORMA": {
@@ -2993,80 +3014,285 @@ export const NPC_DATABASE: Record<string, NPCStats> = {
 
   ferren: {
     id: "ferren",
-    name: "Ferren, a Entidade da Ascensão Profana",
-    role: "Divindade em Ascensão / Colosso Apocalíptico (Escala S)",
+    name: "Arquilich Ferren Asloth",
+    role: "Arquilich / Soberano de Aslothia / Entidade da Ascensão Profana",
     category: "antagonista",
-    nd: "Escala S (Divindade)",
-    tipo: "Entidade Divina / Avatar Cósmico",
-    tamanho: "Colossal (mais de 50 metros)",
-    deslocamento: "Voo 30m / Teletransporte",
-    description: "A entidade cultuada por Severian nos subterrâneos de Milothiann. Quando os 4 Pilonos Arcanos entram em ressonância e o ritual atinge o ápice, o céu se racha em púrpura e a silhueta titânica de Ferren emerge da terra, distorcendo a gravidade, o clima e a própria realidade. Não pode ser derrotada por lâminas ou magias mortais — o objetivo no Ato III é a fuga desesperada!",
+    nd: "S",
+    tipo: "Morto-vivo Médio (Arquilich)",
+    tamanho: "Médio",
+    deslocamento: "9m (6q), Teleporte 30m (20q)",
+    description: "O lendário Conde Ferren Asloth, o Arquilich soberano de Aslothia, o Reino dos Mortos. Ao consumar a Noite da Ascensão Profana, tornou-se o mais temido conjurador morto-vivo de Arton (ND S). Nos subterrâneos de Milothiann, o Inquisidor Severian busca canalizar o sangue e a centelha de Cassandra através dos 4 Pilonos Arcanos para invocar o avatar de Ferren como um cataclismo vivo sobre o Reinado. Com poder arcano além da imaginação mortal, Ferren comanda legiões de mortos-vivos de até ND 19, rouba feitiços de conjuradores no ar e dobra as próprias leis da magia e do clima ao seu comando.",
     atributos: {
-      for: 36,
-      des: 20,
-      con: 40,
-      int: 30,
-      sab: 30,
-      car: 30
+      for: 12,
+      des: 22,
+      con: 18,
+      int: 40,
+      sab: 18,
+      car: 24
     },
     pericias: [
-      { nome: "Misticismo", mod: 25 },
-      { nome: "Vontade", mod: 25 },
-      { nome: "Iniciativa", mod: 20 },
-      { nome: "Intimidação", mod: 25 }
+      { nome: "Conhecimento", mod: 36 },
+      { nome: "Misticismo", mod: 36 },
+      { nome: "Investigação", mod: 31 },
+      { nome: "Nobreza", mod: 31 },
+      { nome: "Ofício (Alquimia)", mod: 31 },
+      { nome: "Iniciativa", mod: 27 },
+      { nome: "Diplomacia", mod: 25 },
+      { nome: "Enganação", mod: 25 },
+      { nome: "Intimidação", mod: 25 },
+      { nome: "Intuição", mod: 25 },
+      { nome: "Percepção", mod: 22 },
+      { nome: "Religião", mod: 20 },
+      { nome: "Fortitude", mod: 31 },
+      { nome: "Reflexos", mod: 27 },
+      { nome: "Vontade", mod: 39 }
     ],
     combatStats: {
-      pv: "Infinito (Escala S)",
-      pm: "Infinito",
-      defesa: "Inviolável (38+)",
-      iniciativa: 20,
-      rd: "50 contra qualquer ataque mortal",
-      sentidos: "Onipresença local, Visão Total em todo o mapa de Milothiann",
-      imunidades: ["Imunidade a todas as magias, venenos, doenças, morte súbita, controle mental e paralisia"],
+      pv: 2418,
+      pm: 255,
+      defesa: 66,
+      iniciativa: 27,
+      rd: "20/mágico",
+      sentidos: "Percepção +22, Visão no Escuro, Visão Tumular (Visão Mística contínua para criaturas e objetos invisíveis)",
+      resistencias: [
+        "Fortitude +31, Reflexos +27, Vontade +39",
+        "Resistência a Magia +5",
+        "Redução de Dano 20/mágico"
+      ],
+      imunidades: [
+        "Adivinhação",
+        "Efeitos Mentais",
+        "Eletricidade",
+        "Frio",
+        "Metamorfose",
+        "Imunidades Padrão de Morto-vivo"
+      ],
       ataques: [
         {
-          nome: "Golpe Sísmico do Braço de Trevas",
-          teste: "Ataque em Área (Raio de 18m)",
-          mod: 25,
-          dano: "10d10+30",
-          tipo: "Impacto + Trevas",
-          alcance: "Longo (120m)",
-          critico: "x3",
-          especial: "Destrói estruturas, muralhas e pontes instantaneamente. Reflexos CD 28 reduz à metade."
+          nome: "Cajado da Destruição",
+          teste: "+57",
+          mod: 57,
+          dano: "2d6+16 + 10d6+10 frio",
+          tipo: "Impacto + Frio",
+          alcance: "Corpo a corpo (1,5m)",
+          critico: "x2",
+          especial: "Toque Paralisante: Fortitude CD 55 evita ficar paralisado por 1d6 rodadas."
         },
         {
-          nome: "Raio da Desintegração de Mana",
-          teste: "Linha de 60m",
-          mod: 22,
-          dano: "8d12",
-          tipo: "Essência Corrompida",
-          alcance: "Longo",
-          especial: "Desintegra objetos e queima 2d6 PM de cada herói na linha."
+          nome: "Toque Gélido",
+          teste: "+55",
+          mod: 55,
+          dano: "10d6+10",
+          tipo: "Frio",
+          alcance: "Corpo a corpo (1,5m)",
+          especial: "Toque Paralisante: Fortitude CD 55 evita ficar paralisado por 1d6 rodadas."
+        },
+        {
+          nome: "Toque Vampírico (Ataque Mágico)",
+          teste: "+55",
+          mod: 55,
+          dano: "36d6+51",
+          tipo: "Trevas / Dreno Vital",
+          alcance: "Corpo a corpo (1,5m)",
+          especial: "Custo 35 PM. Se acertar, além do dano corpo a corpo padrão, causa 36d6+51 de trevas e Ferren recupera metade desse valor em PV."
+        }
+      ],
+      magias: [
+        {
+          nome: "Conjurador Arcano Épico (Mago 20º Nível)",
+          custoPM: "Limite 35 PM",
+          cd: 57,
+          escola: "Arcano & Divino",
+          alcance: "Variado",
+          desc: "Como um mago de 20º nível (CD 57, limite de PM 35). Além das magias listadas abaixo, Ferren pode lançar qualquer magia de abjuração, convocação ou necromancia, arcana ou divina."
+        },
+        {
+          nome: "Ferver Sangue",
+          custoPM: 35,
+          cd: 57,
+          escola: "Necromancia / Fogo",
+          alcance: "Curto",
+          duracao: "Sustentada",
+          desc: "O sangue de criaturas escolhidas em alcance curto ferve violentamente. Na conjuração e no início de cada um dos turnos de Ferren, cada alvo sofre 14d8+29 de fogo e fica enjoado por 1 rodada (Fortitude CD 57 reduz dano à metade e evita condição; 2 sucessos seguidos encerram a magia no alvo). Se reduzido a 0 PV por esta magia, seu corpo explode em pedaços matando-o e causando 6d6+21 de fogo em criaturas a até 3m (Reflexos CD 57 reduz à metade). Não afeta criaturas sem sangue."
+        },
+        {
+          nome: "Toque da Morte",
+          custoPM: 25,
+          cd: 57,
+          escola: "Necromancia",
+          alcance: "Curto",
+          duracao: "Instantânea",
+          desc: "Criaturas em alcance curto sofrem 10d8+35 pontos de dano de trevas. Um inimigo com menos da metade de seus PV totais em vez disso deve fazer um teste de Fortitude (CD 57). Se passar, sofre o dano normal. Se falhar, seus PV são reduzidos imediatamente a –10 (morte iminente)."
+        },
+        {
+          nome: "Legião",
+          custoPM: 15,
+          cd: 57,
+          escola: "Encantamento",
+          alcance: "Médio",
+          duracao: "Sustentada",
+          desc: "Até 10 alvos em alcance médio obedecem cegamente aos comandos de Ferren, exceto ordens claramente suicidas. No fim de cada um de seus turnos, o alvo pode fazer um teste de Vontade (CD 57) para livrar-se do efeito (alvos que passam ficam abalados por 1 rodada)."
+        },
+        {
+          nome: "Marionete",
+          custoPM: 10,
+          cd: 57,
+          escola: "Encantamento",
+          alcance: "Médio",
+          duracao: "Sustentada",
+          desc: "Ferren assume o controle dos movimentos e ações físicas de uma criatura em alcance médio. Ao ser afetada e no início de cada um de seus turnos, a vítima faz um teste de Fortitude (CD 57) para quebrar o encanto."
+        },
+        {
+          nome: "Rogar Maldição",
+          custoPM: 10,
+          cd: 57,
+          escola: "Necromancia",
+          alcance: "Curto",
+          duracao: "Permanente",
+          desc: "Uma criatura em alcance curto fica esmorecida e fica permanentemente incapaz de se comunicar ou lançar magias (Fortitude CD 57 anula)."
+        },
+        {
+          nome: "Tentáculos de Trevas",
+          custoPM: 10,
+          cd: 57,
+          escola: "Convocação / Trevas",
+          alcance: "Médio (Esfera de 6m)",
+          duracao: "Cena",
+          desc: "Tentáculos sombrios brotam do solo em uma esfera de 6m e agarram quem estiver na área. Ao lançar e no início de cada um de seus turnos, Ferren faz teste de manobra Agarrar (Misticismo +36) contra todos na área. Alvos agarrados sofrem 8d6+8 pontos de dano de trevas (+15 no primeiro dano). Área conta como terreno difícil e os tentáculos são imunes a dano."
+        },
+        {
+          nome: "Velocidade",
+          custoPM: 10,
+          cd: 57,
+          escola: "Transmutação",
+          alcance: "Pessoal",
+          duracao: "Sustentada",
+          desc: "Ferren ganha uma ação padrão adicional em cada um de seus turnos."
+        },
+        {
+          nome: "Desespero Esmagador",
+          custoPM: 8,
+          cd: 57,
+          escola: "Encantamento",
+          alcance: "Cone de 6m",
+          duracao: "Cena",
+          desc: "Criaturas no cone ficam debilitadas e esmorecidas pela cena inteira (Vontade CD 57 reduz a duração para apenas 1 rodada)."
+        },
+        {
+          nome: "Dissipar Magia",
+          custoPM: 3,
+          cd: 57,
+          escola: "Abjuração",
+          alcance: "Médio (Esfera 3m ou Alvo)",
+          duracao: "Instantânea",
+          desc: "Ferren escolhe uma criatura, objeto ou esfera de 3m e faz um teste de Misticismo (+36; quando usada com Contramágica Superior, rola dois d20 e escolhe o melhor). Todas as magias ativas no alvo com CD igual ou menor que o resultado são dissipadas."
         }
       ],
       habilidades: [
         {
-          nome: "Presença Apocalíptica da Ascensão",
-          tipoAcao: "Aura Contínua (Todo o Ato III)",
-          desc: "Toda a região ao redor de Milothiann entra em colapso sísmico. A cada rodada na fuga, os heróis precisam de testes de Atletismo/Acrobacia/Reflexos para desviar de escombros em chamas."
+          nome: "Arcano de Batalha",
+          tipoAcao: "Passiva",
+          desc: "O Arquilich Ferren Asloth soma seu mod de Inteligência (+15) nas rolagens de dano quando lança magias (já contabilizado em seus ataques e feitiços)."
         },
         {
-          nome: "O Despertar dos Retornados",
-          tipoAcao: "Automática",
-          desc: "Ergue 1d4+2 Sombras e Retornados a cada 2 rodadas da terra rachada."
+          nome: "Aura de Medo",
+          tipoAcao: "Aura (Raio de 30m)",
+          desc: "Criaturas em um raio de 30m de Ferren ficam abaladas (Vontade CD 55 evita e a criatura não pode mais ser abalada por esta habilidade até o fim da cena)."
         },
         {
-          nome: "A Cicatriz de Cassandra",
-          tipoAcao: "Vínculo Místico",
-          desc: "Quando Cassandra usa sua Fagulha ou Desejo para abrir caminho na ponte, Ferren sente sua linhagem e tenta atraí-la, criando o clímax de sacrifício e decisão do Ato III."
+          nome: "Conhecimento Sequestrado",
+          tipoAcao: "Reação (1x/rodada)",
+          custoPM: 3,
+          desc: "Uma vez por rodada, quando vê outra criatura lançando uma magia em alcance médio, Ferren pode tomar essa magia para si. A criatura deve passar em Vontade (CD 55); se falhar, não pode mais lançar essa magia até o fim da cena, e durante esse período ela se torna uma magia conhecida e utilizável por Ferren."
+        },
+        {
+          nome: "Contramágica Superior",
+          tipoAcao: "Reação (1x/rodada)",
+          desc: "Uma vez por rodada, quando vê uma magia ser conjurada, Ferren faz uma contramágica de reação. Se usar Dissipar Magia para isso, ele rola dois dados d20 e usa o melhor resultado."
+        },
+        {
+          nome: "Dança da Morte",
+          tipoAcao: "Ação Livre (Início de Turno)",
+          desc: "No início de seu turno, Ferren refaz os testes de resistência de cada condição prejudicial que o esteja afetando. Se passar no teste, a condição se encerra imediatamente."
+        },
+        {
+          nome: "Despertar dos Mortos",
+          tipoAcao: "Ação Completa",
+          custoPM: 10,
+          desc: "Ferren conjura um morto-vivo à sua escolha, feito de energia negativa e de até ND 19 (ex: Necrodraco ND 17, Senhor das Múmias ND 15, Vampiro ND 12, etc.). A criatura surge em alcance curto, obedece cegamente a Ferren e age na mesma iniciativa dele até o fim da cena ou até ser dispensada (ação livre). Limite de 1 morto-vivo ativo por vez."
+        },
+        {
+          nome: "Drenar Vida",
+          tipoAcao: "Ação Livre",
+          custoPM: 1,
+          desc: "Quando lança uma magia que causa dano, Ferren pode mudar o tipo desse dano para trevas. Para cada criatura que falhar no teste de resistência contra essa magia, Ferren recupera uma quantidade de PV igual à metade de todo o dano causado."
+        },
+        {
+          nome: "Fluxo de Mana",
+          tipoAcao: "Passiva",
+          desc: "Ferren pode manter dois efeitos mágicos sustentados simultaneamente com apenas uma ação livre (pagando o custo de sustentação de cada um)."
+        },
+        {
+          nome: "Magia Acelerada",
+          tipoAcao: "Ação Livre (1x/rodada)",
+          custoPM: "+4 PM",
+          desc: "Uma vez por rodada, quando lança uma magia com execução de ação completa ou menor, Ferren pode mudar sua execução para ação livre pagando +4 PM."
+        },
+        {
+          nome: "Magia Discreta",
+          tipoAcao: "Ação Livre",
+          custoPM: "+2 PM",
+          desc: "Quando lança uma magia, Ferren não precisa gesticular ou falar, podendo conjurar com as mãos presas ou amordaçado. Perceber que ele lançou uma magia exige passar em Misticismo CD 30."
+        },
+        {
+          nome: "Presença Opressora",
+          tipoAcao: "Reação Defensiva",
+          desc: "Quando qualquer criatura ataca Ferren, deve passar em um teste de Vontade (CD 55) ou não conseguirá machucá-lo, perderá a ação e sofrerá 12d6 pontos de dano psíquico. Se passar, não é mais afetada até o fim da cena."
+        },
+        {
+          nome: "Regente Sombrio de Aslothia",
+          tipoAcao: "1x por Rodada",
+          desc: "Ferren tem soberania total sobre seus domínios. Uma vez por rodada, pode alterar o clima de qualquer região como se tivesse lançado Controlar o Clima. Além disso, pode manipular o solo impedindo travessias e sabe a localização exata de qualquer criatura conhecida dentro do reino."
+        },
+        {
+          nome: "Rigor Mortis",
+          tipoAcao: "Passiva",
+          desc: "Uma criatura que falhe na resistência contra qualquer magia de Ferren perde sua próxima ação de movimento."
+        },
+        {
+          nome: "Sacrificar Servo",
+          tipoAcao: "Reação (1x/rodada)",
+          desc: "Uma vez por rodada, quando sofre dano, Ferren pode sacrificar uma de suas criaturas invocadas para reduzir todo o dano sofrido a zero!"
+        },
+        {
+          nome: "Toque Paralisante",
+          tipoAcao: "Passiva nos Ataques",
+          desc: "Os ataques corpo a corpo de Ferren causam 10d6+10 pontos de dano de frio extras (já contabilizados). Uma criatura que sofra esse dano de frio fica paralisada por 1d6 rodadas (Fortitude CD 55 evita)."
+        },
+        {
+          nome: "Visão Tumular",
+          tipoAcao: "Passiva Permanente",
+          desc: "Ferren está permanentemente sob efeito da magia Visão Mística com o aprimoramento que permite enxergar criaturas e objetos invisíveis."
+        },
+        {
+          nome: "Filactério do Arquilich",
+          tipoAcao: "Imortalidade Ancestral",
+          desc: "Se destruído em combate, o Arquilich Ferren Asloth retorna completamente reconstituído em 1d10 dias. A única forma de destruí-lo definitivamente é encontrar e quebrar seu filactério sagrado protegido nas profundezas de Aslothia."
         }
       ]
     },
-    taticas: "Ferren não é um monstro para combate equilibrado. Ele funciona como uma força da natureza / evento cataclísmico vivo. O mestre deve descrever o estrondo ensurdecedor de seus passos, os relâmpagos púrpuras e o desmoronamento das torres para criar tensão máxima durante a fuga pelo desfiladeiro e pela ponte!",
+    equipamentos: [
+      "Amuleto do Abutre",
+      "Cajado da Destruição (+2 no ataque/dano, foco canalizador)",
+      "Robe do Arquimago (+5 na Defesa e Resistências, ampliador de CD)",
+      "Tesouro Triplo de Escala S"
+    ],
+    taticas: "Ferren Asloth é uma ameaça de Escala S (ND S), invulnerável ao combate frontal padrão de aventureiros mortais. Em combate, abre com Magia Acelerada para erguer mortos-vivos de até ND 19 (como Necrodracos ou Senhores das Múmias) com Despertar dos Mortos e conjurar Velocidade. Usa Presença Opressora (CD 55) e Sacrificar Servo para anular qualquer dano iminente. Conjuradores que tentem lançar feitiços contra ele sofrem com Conhecimento Sequestrado (CD 55) e Contramágica Superior (dois d20). Seus ataques em área (Ferver Sangue e Toque da Morte) dizimam regimentos inteiros. No clímax do Ato III da campanha CASSANDRA, Ferren funciona como uma força avassaladora da qual o grupo deve fugir desesperadamente pelos canais e pela ponte de Milothiann!",
     roleplay: {
-      personalidade: "Uma inteligência ancestral e cósmica que enxerga os mortais como formigas em sua marcha de renascimento.",
-      citacao: "'O PÓ RETORNA AO PÓ... E A LINHAGEM DOS CRANE ALIMENTARÁ A ETERNIDADE.'",
-      notasMestre: "Use Ferren para ditar o ritmo frenético do Ato III. Não permita que os jogadores pensem em 'bater nele' — tudo o que fizerem deve ser focado em correr, desarmar passagens, proteger Cassandra e atravessar a ponte antes que tudo desabe!"
+      personalidade: "Frio, aristocrático, megalomaníaco e de intelecto colossal. Enxerga os mortais como insetos transitórios e trata a necromancia como a apoteose da ordem natural.",
+      citacao: "'Vocês rastejam sob o sol acreditando na própria liberdade... mas a terra, o céu e até o sopro nos seus pulmões pertencem ao senhor de Aslothia.'",
+      notasMestre: "Ficha oficial de Tormenta 20 (Ameaças de Arton, ND S). No Ato III de CASSANDRA, demonstre o poder avassalador de Ferren: mesmo que os heróis façam rolagens heroicas, a Defesa 66, RD 20, Presença Opressora CD 55 e Contramágica Superior deixam claro que a missão é sobreviver e guiar Cassandra até a ponte antes que a fortaleza seja engolida pelas trevas!"
     }
   }
 };
+

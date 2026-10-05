@@ -151,7 +151,7 @@ const ACT_LAYOUTS: Record<number, ActMapLayout> = {
       { id: "C4_RECUSAR", label: "Recusar Justificativas", x: 670, y: 140, type: "outcome" },
       { id: "E_NOME", label: "Nome Escolhido Desperto", x: 420, y: 230, type: "outcome" },
       { id: "A_ASCENSAO", label: "Ascensão de Ferren (Escala S)", x: 420, y: 320, type: "choice" },
-      { id: "F1_ESCALA_S", label: "Ataque Apodrece no Ar", x: 650, y: 320, type: "outcome" },
+      { id: "F1_ESCALA_S", label: "Boss III: Ferren (Escala S)", x: 650, y: 320, type: "combat" },
       { id: "CS1_ACEITA", label: "Cassandra Aceita Sinete", x: 200, y: 420, type: "outcome" },
       { id: "CS2_DISTANCIA", label: "Manter Distância", x: 420, y: 420, type: "outcome" },
       { id: "CS3_NEUTRO", label: "Adiar Resposta", x: 620, y: 420, type: "outcome" },
