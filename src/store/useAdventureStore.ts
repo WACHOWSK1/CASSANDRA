@@ -6,13 +6,16 @@ import {
   AdventureNPCStatus, 
   AdventureGroupConditions, 
   HistoryStep, 
-  ChallengeConfig 
+  ChallengeConfig,
+  CreatureCombatState,
+  CreatureCombatLogEntry
 } from '@/types/adventure';
 import { 
   ADVENTURE_NODES, 
   INITIAL_RESOURCES, 
   INITIAL_NPC_STATUS, 
-  INITIAL_GROUP_CONDITIONS 
+  INITIAL_GROUP_CONDITIONS,
+  NPC_DATABASE
 } from '@/data/adventureData';
 
 import { 
@@ -20,6 +23,7 @@ import {
   BAD_TRAVEL_EVENTS, 
   TravelEvent 
 } from '@/data/travelData';
+import { rollD20Test, rollDie } from '@/lib/diceEngine';
 
 interface ChallengeState {
   active: boolean;
@@ -70,6 +74,9 @@ interface AdventureStoreState {
   currentChallenge: ChallengeState;
   diceRollResult: { total: number; breakdown: string } | null;
   selectedNPCForModal: string | null;
+  activeCombatNPCId: string | null;
+  npcModalTab: 'combate' | 'ficha' | 'taticas' | 'roleplay';
+  creatureCombatStates: Record<string, CreatureCombatState>;
   selectedItemForModal: string | null;
   isExportModalOpen: boolean;
   soundEnabled: boolean;
@@ -77,7 +84,7 @@ interface AdventureStoreState {
 
   // Novos Estados Operacionais (Alerta, Transferência, Pilonos e Lanternas)
   transferClock: number; // 0, 1, 2, 3
-  activeRightTab: 'alertas' | 'antimagia' | 'documentos';
+  activeRightTab: 'alertas' | 'antimagia' | 'documentos' | 'dados';
   pylonsList: PylonItem[];
   lanternasState: {
     total: number;
@@ -99,7 +106,7 @@ interface AdventureStoreState {
   setPylonStatus: (id: number, status: PylonStatus) => void;
   toggleLanternaActive: (delta: number) => void;
   setLanternaDenunciou: (denunciou: boolean) => void;
-  setActiveRightTab: (tab: 'alertas' | 'antimagia' | 'documentos') => void;
+  setActiveRightTab: (tab: 'alertas' | 'antimagia' | 'documentos' | 'dados') => void;
   
   // Ações de Viagem
   drawTravelEvent: (type: 'bom' | 'ruim') => TravelEvent;
@@ -116,8 +123,21 @@ interface AdventureStoreState {
   destruirPilono: () => void;
   inverterRunas: () => void;
   togglePylonManual: (index: number) => void;
-  openNPCModal: (npcId: string) => void;
+  openNPCModal: (npcId: string, tab?: 'combate' | 'ficha' | 'taticas' | 'roleplay') => void;
+  setActiveCombatNPC: (npcId: string | null) => void;
+  closeActiveCombat: () => void;
+  setNPCModalTab: (tab: 'combate' | 'ficha' | 'taticas' | 'roleplay') => void;
   closeNPCModal: () => void;
+  getOrCreateCreatureCombat: (npcId: string) => CreatureCombatState;
+  modifyCreaturePV: (npcId: string, delta: number) => void;
+  modifyCreaturePM: (npcId: string, delta: number) => void;
+  setCreaturePV: (npcId: string, value: number) => void;
+  setCreaturePM: (npcId: string, value: number) => void;
+  toggleCreatureCondicao: (npcId: string, condicao: string) => void;
+  setCreatureDefesaMod: (npcId: string, delta: number) => void;
+  addCreatureCombatLog: (npcId: string, log: Omit<CreatureCombatLogEntry, 'id' | 'time'>) => void;
+  advanceCreatureRound: (npcId: string) => void;
+  resetCreatureCombat: (npcId: string) => void;
   openItemModal: (itemId: string) => void;
   closeItemModal: () => void;
   toggleResourceItem: (key: keyof AdventureResources) => void;
@@ -162,6 +182,9 @@ export const useAdventureStore = create<AdventureStoreState>()(
       },
       diceRollResult: null,
       selectedNPCForModal: null,
+      activeCombatNPCId: null,
+      npcModalTab: 'combate',
+      creatureCombatStates: {},
       selectedItemForModal: null,
       isExportModalOpen: false,
       soundEnabled: true,
@@ -406,22 +429,16 @@ export const useAdventureStore = create<AdventureStoreState>()(
       },
 
       rollDice: (skillName = "", cd = null, mod = 0) => {
-        const d20 = Math.floor(Math.random() * 20) + 1;
-        const total = d20 + mod;
-        let breakdown = `d20 (${d20}) + ${mod} = ${total}`;
+        const result = rollD20Test({ mod, cd });
+        const { total, breakdown, passedCD } = result;
 
-        if (d20 === 20) breakdown += " ★ CRÍTICO (20 Natural)!";
-        else if (d20 === 1) breakdown += " ☠ FALHA CRÍTICA (1 Natural)!";
-
-        if (cd !== null) {
-          const passed = total >= cd;
-          breakdown += ` | CD ${cd}: ${passed ? 'SUCESSO' : 'FALHA'}`;
+        if (cd !== null && passedCD !== undefined) {
           if (get().currentChallenge.active) {
-            get().registerChallengeResult(passed ? 'success' : 'failure');
+            get().registerChallengeResult(passedCD ? 'success' : 'failure');
           }
         }
 
-        const log = `[${new Date().toLocaleTimeString()}] Rolagem de Dados: ${skillName ? skillName + ' - ' : ''}${breakdown}`;
+        const log = `[${new Date().toLocaleTimeString()}] Rolagem CSPRNG: ${skillName ? skillName + ' - ' : ''}${breakdown}`;
         set((state) => ({
           diceRollResult: { total, breakdown: (skillName ? `${skillName}: ` : '') + breakdown },
           chronicle: [...state.chronicle, log]
@@ -447,7 +464,8 @@ export const useAdventureStore = create<AdventureStoreState>()(
       inverterRunas: () => {
         set((state) => {
           const firstActive = state.pylonsList.find(p => p.status === 'ativo');
-          const dano = Math.floor(Math.random() * 25) + 10;
+          // CSPRNG para dano de inversão (10 a 34 de dano)
+          const dano = rollDie(25) + 9;
           if (firstActive) {
             const updated = state.pylonsList.map(p => p.id === firstActive.id ? { ...p, status: 'invertido' as PylonStatus } : p);
             const destroyedCount = updated.filter(p => p.status !== 'ativo').length;
@@ -478,7 +496,8 @@ export const useAdventureStore = create<AdventureStoreState>()(
       // Implementação das Ações de Viagem (Eventos Bons e Ruins)
       drawTravelEvent: (type) => {
         const pool = type === 'bom' ? GOOD_TRAVEL_EVENTS : BAD_TRAVEL_EVENTS;
-        const randomIndex = Math.floor(Math.random() * pool.length);
+        // Seleção equiprovável com CSPRNG seguro
+        const randomIndex = rollDie(pool.length) - 1;
         const event = pool[randomIndex];
 
         set((state) => {
@@ -575,8 +594,302 @@ export const useAdventureStore = create<AdventureStoreState>()(
         }));
       },
 
-      openNPCModal: (npcId) => set({ selectedNPCForModal: npcId }),
+      getOrCreateCreatureCombat: (npcId) => {
+        const state = get().creatureCombatStates[npcId];
+        if (state) return state;
+
+        const npc = NPC_DATABASE[npcId];
+        const rawPV = npc?.combatStats?.pv;
+        const maxPV = typeof rawPV === 'number' ? rawPV : parseInt(String(rawPV)) || 50;
+        const rawPM = npc?.combatStats?.pm;
+        const maxPM = typeof rawPM === 'number' ? rawPM : parseInt(String(rawPM)) || 0;
+        const initialCondicoes: string[] = [];
+        if (npcId === 'dazan_vampiro') initialCondicoes.push('Fatigado');
+
+        const newState: CreatureCombatState = {
+          currentPV: maxPV,
+          maxPV,
+          currentPM: maxPM,
+          maxPM,
+          tempPV: 0,
+          condicoes: initialCondicoes,
+          defesaMod: 0,
+          rdMod: 0,
+          round: 1,
+          combatLog: [
+            {
+              id: `log-${Date.now()}`,
+              time: new Date().toLocaleTimeString(),
+              text: `Painel de combate pronto para ${npc?.name || npcId} (ND ${npc?.nd || '?'}).`,
+              type: 'info'
+            }
+          ]
+        };
+
+        set((s) => ({
+          creatureCombatStates: {
+            ...s.creatureCombatStates,
+            [npcId]: newState
+          }
+        }));
+
+        return newState;
+      },
+
+      openNPCModal: (npcId, tab = 'combate') => {
+        get().getOrCreateCreatureCombat(npcId);
+        set({ selectedNPCForModal: npcId, npcModalTab: tab });
+      },
+
+      setActiveCombatNPC: (npcId) => {
+        if (npcId) {
+          get().getOrCreateCreatureCombat(npcId);
+        }
+        // Fechar qualquer modal e focar no combate central na jornada
+        set({ activeCombatNPCId: npcId, selectedNPCForModal: null, audioViewActive: false });
+      },
+
+      closeActiveCombat: () => set({ activeCombatNPCId: null }),
+
+      setNPCModalTab: (tab) => set({ npcModalTab: tab }),
+
       closeNPCModal: () => set({ selectedNPCForModal: null }),
+
+      modifyCreaturePV: (npcId, delta) => {
+        const current = get().getOrCreateCreatureCombat(npcId);
+        const newPV = Math.max(0, Math.min(current.maxPV + current.tempPV, current.currentPV + delta));
+        const deltaStr = delta > 0 ? `+${delta} PV (Cura)` : `${delta} PV (Dano)`;
+
+        set((s) => {
+          const c = s.creatureCombatStates[npcId] || current;
+          return {
+            creatureCombatStates: {
+              ...s.creatureCombatStates,
+              [npcId]: {
+                ...c,
+                currentPV: newPV,
+                combatLog: [
+                  {
+                    id: `log-${Date.now()}-${Math.random()}`,
+                    time: new Date().toLocaleTimeString(),
+                    text: `${deltaStr} ➔ PV Atual: ${newPV}/${c.maxPV}`,
+                    type: delta > 0 ? 'cura' : 'dano'
+                  },
+                  ...c.combatLog.slice(0, 40)
+                ]
+              }
+            }
+          };
+        });
+      },
+
+      modifyCreaturePM: (npcId, delta) => {
+        const current = get().getOrCreateCreatureCombat(npcId);
+        const newPM = Math.max(0, Math.min(current.maxPM, current.currentPM + delta));
+        const deltaStr = delta > 0 ? `+${delta} PM` : `${delta} PM gasto`;
+
+        set((s) => {
+          const c = s.creatureCombatStates[npcId] || current;
+          return {
+            creatureCombatStates: {
+              ...s.creatureCombatStates,
+              [npcId]: {
+                ...c,
+                currentPM: newPM,
+                combatLog: [
+                  {
+                    id: `log-${Date.now()}-${Math.random()}`,
+                    time: new Date().toLocaleTimeString(),
+                    text: `${deltaStr} ➔ PM Atual: ${newPM}/${c.maxPM}`,
+                    type: 'info'
+                  },
+                  ...c.combatLog.slice(0, 40)
+                ]
+              }
+            }
+          };
+        });
+      },
+
+      setCreaturePV: (npcId, value) => {
+        const current = get().getOrCreateCreatureCombat(npcId);
+        const safeVal = Math.max(0, value);
+        set((s) => {
+          const c = s.creatureCombatStates[npcId] || current;
+          return {
+            creatureCombatStates: {
+              ...s.creatureCombatStates,
+              [npcId]: {
+                ...c,
+                currentPV: safeVal
+              }
+            }
+          };
+        });
+      },
+
+      setCreaturePM: (npcId, value) => {
+        const current = get().getOrCreateCreatureCombat(npcId);
+        const safeVal = Math.max(0, value);
+        set((s) => {
+          const c = s.creatureCombatStates[npcId] || current;
+          return {
+            creatureCombatStates: {
+              ...s.creatureCombatStates,
+              [npcId]: {
+                ...c,
+                currentPM: safeVal
+              }
+            }
+          };
+        });
+      },
+
+      toggleCreatureCondicao: (npcId, condicao) => {
+        const current = get().getOrCreateCreatureCombat(npcId);
+        const exists = current.condicoes.includes(condicao);
+        const nextCondicoes = exists 
+          ? current.condicoes.filter(c => c !== condicao)
+          : [...current.condicoes, condicao];
+
+        set((s) => {
+          const c = s.creatureCombatStates[npcId] || current;
+          return {
+            creatureCombatStates: {
+              ...s.creatureCombatStates,
+              [npcId]: {
+                ...c,
+                condicoes: nextCondicoes,
+                combatLog: [
+                  {
+                    id: `log-${Date.now()}-${Math.random()}`,
+                    time: new Date().toLocaleTimeString(),
+                    text: exists ? `Condição removida: [${condicao}]` : `Condição aplicada: [${condicao}]`,
+                    type: 'condicao'
+                  },
+                  ...c.combatLog.slice(0, 40)
+                ]
+              }
+            }
+          };
+        });
+      },
+
+      setCreatureDefesaMod: (npcId, delta) => {
+        const current = get().getOrCreateCreatureCombat(npcId);
+        set((s) => {
+          const c = s.creatureCombatStates[npcId] || current;
+          return {
+            creatureCombatStates: {
+              ...s.creatureCombatStates,
+              [npcId]: {
+                ...c,
+                defesaMod: c.defesaMod + delta,
+                combatLog: [
+                  {
+                    id: `log-${Date.now()}-${Math.random()}`,
+                    time: new Date().toLocaleTimeString(),
+                    text: `Modificador de Defesa: ${delta >= 0 ? `+${delta}` : delta} (Total mod: ${c.defesaMod + delta})`,
+                    type: 'info'
+                  },
+                  ...c.combatLog.slice(0, 40)
+                ]
+              }
+            }
+          };
+        });
+      },
+
+      addCreatureCombatLog: (npcId, log) => {
+        const current = get().getOrCreateCreatureCombat(npcId);
+        set((s) => {
+          const c = s.creatureCombatStates[npcId] || current;
+          return {
+            creatureCombatStates: {
+              ...s.creatureCombatStates,
+              [npcId]: {
+                ...c,
+                combatLog: [
+                  {
+                    id: `log-${Date.now()}-${Math.random()}`,
+                    time: new Date().toLocaleTimeString(),
+                    text: log.text,
+                    type: log.type
+                  },
+                  ...c.combatLog.slice(0, 40)
+                ]
+              }
+            }
+          };
+        });
+      },
+
+      advanceCreatureRound: (npcId) => {
+        const current = get().getOrCreateCreatureCombat(npcId);
+        const nextRound = current.round + 1;
+        const notes: string[] = [`Início da Rodada ${nextRound}`];
+
+        if (current.condicoes.includes('Sangrando')) {
+          notes.push('⚠️ ALERTA: A criatura está Sangrando! Role ou aplique dano contínuo de sangramento.');
+        }
+
+        set((s) => {
+          const c = s.creatureCombatStates[npcId] || current;
+          return {
+            creatureCombatStates: {
+              ...s.creatureCombatStates,
+              [npcId]: {
+                ...c,
+                round: nextRound,
+                combatLog: [
+                  {
+                    id: `log-${Date.now()}-${Math.random()}`,
+                    time: new Date().toLocaleTimeString(),
+                    text: notes.join(' | '),
+                    type: 'info'
+                  },
+                  ...c.combatLog.slice(0, 40)
+                ]
+              }
+            }
+          };
+        });
+      },
+
+      resetCreatureCombat: (npcId) => {
+        const npc = NPC_DATABASE[npcId];
+        const rawPV = npc?.combatStats?.pv;
+        const maxPV = typeof rawPV === 'number' ? rawPV : parseInt(String(rawPV)) || 50;
+        const rawPM = npc?.combatStats?.pm;
+        const maxPM = typeof rawPM === 'number' ? rawPM : parseInt(String(rawPM)) || 0;
+        const initialCondicoes: string[] = [];
+        if (npcId === 'dazan_vampiro') initialCondicoes.push('Fatigado');
+
+        set((s) => ({
+          creatureCombatStates: {
+            ...s.creatureCombatStates,
+            [npcId]: {
+              currentPV: maxPV,
+              maxPV,
+              currentPM: maxPM,
+              maxPM,
+              tempPV: 0,
+              condicoes: initialCondicoes,
+              defesaMod: 0,
+              rdMod: 0,
+              round: 1,
+              combatLog: [
+                {
+                  id: `log-${Date.now()}`,
+                  time: new Date().toLocaleTimeString(),
+                  text: `Combate reiniciado. PV (${maxPV}) e PM (${maxPM}) restaurados.`,
+                  type: 'info'
+                }
+              ]
+            }
+          }
+        }));
+      },
       openItemModal: (itemId) => set({ selectedItemForModal: itemId }),
       closeItemModal: () => set({ selectedItemForModal: null }),
 

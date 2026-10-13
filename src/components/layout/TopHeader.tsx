@@ -14,7 +14,8 @@ import {
   AlertTriangle,
   Users,
   BookOpen,
-  Package
+  Package,
+  Dices
 } from 'lucide-react';
 
 export const TopHeader: React.FC = () => {
@@ -144,6 +145,15 @@ export const TopHeader: React.FC = () => {
         >
           <BookOpen className="w-3.5 h-3.5 text-amber-300" />
           <span>Regras T20</span>
+        </button>
+
+        <button 
+          onClick={() => setActiveRightTab('dados')}
+          className="px-3 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-[#9d4edd] to-[#5a189a] hover:from-[#c77dff] hover:to-[#9d4edd] text-white flex items-center gap-1.5 shadow-[0_0_12px_rgba(157,78,221,0.5)] border border-[#ffd166]/50 transition-all"
+          title="Abrir Rolador de Dados e Painel de Auditoria Estatística (10.000 rolagens)"
+        >
+          <Dices className="w-3.5 h-3.5 text-[#ffd166]" />
+          <span>Dados & Auditoria</span>
         </button>
 
         <button 

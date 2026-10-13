@@ -34,3 +34,10 @@ yarn-error.log*
 # temporary files
 scratch_test.css
 viagem_extracted.txt
+scratch/
+.git_test/
+
+# OneDrive conflict duplicates
+*-DESKTOP-*
+*-essed*
+-essed*

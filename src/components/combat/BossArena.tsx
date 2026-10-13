@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAdventureStore } from '@/store/useAdventureStore';
+import { rollD20Test, parseAndRollDamageFormula, rollMultipleDice } from '@/lib/diceEngine';
 import { 
   Flame, 
   ShieldAlert, 
@@ -89,24 +90,18 @@ export const BossArena: React.FC = () => {
 
   // 2. Báculo dos Mártires Corrompidos (+22 Ataque)
   const handleBaculoProfano = () => {
-    const d20 = Math.floor(Math.random() * 20) + 1;
-    const bonus = 22;
-    const totalAtaque = d20 + bonus;
-    const isCrit = d20 >= 19;
+    const atkResult = rollD20Test({ mod: 22, critMin: 19 });
+    const isCrit = atkResult.isCrit;
 
-    let dano = 0;
-    const numDados = isCrit ? 9 : 3; // Crítico x3
-    for (let i = 0; i < numDados; i++) dano += Math.floor(Math.random() * 8) + 1;
-    dano += isCrit ? 36 : 12;
+    // Dano: 3d8+12 impacto/trevas (Crítico x3)
+    const dmgResult = parseAndRollDamageFormula("3d8+12 impacto", isCrit ? 3 : 1);
+    const pmRoll = rollMultipleDice(isCrit ? 2 : 1, 6);
+    const pmDrenado = pmRoll.sum;
 
-    const pmDrenado = isCrit 
-      ? Math.floor(Math.random() * 6) + 1 + Math.floor(Math.random() * 6) + 1 
-      : Math.floor(Math.random() * 6) + 1;
-
-    handleModifyPV(dano); // Cura Severian com dano de trevas
+    handleModifyPV(dmgResult.total); // Cura Severian com dano de trevas
     setLastActionLog({
       titulo: `💀 Báculo de Ossos Santos & Mártires! ${isCrit ? '💥 CRÍTICO DESTRUTIVO (x3)!' : ''}`,
-      detalhes: `Ataque: [${d20} + 22] = ${totalAtaque} contra a Defesa do herói | Dano: ${dano} de Impacto/Trevas | Drenagem: ${pmDrenado} PM do herói! Severian se cura em +${dano} PV!`,
+      detalhes: `Ataque: [${atkResult.breakdown}] contra a Defesa do herói | Dano: ${dmgResult.total} (${dmgResult.breakdown}) | Drenagem: ${pmDrenado} PM [${pmRoll.rolls.join('+')}] do herói! Severian se cura em +${dmgResult.total} PV!`,
       tipo: "ataque"
     });
   };
@@ -122,13 +117,11 @@ export const BossArena: React.FC = () => {
       return;
     }
     handleModifyPM(-4);
-    let dano = 0;
-    for (let i = 0; i < 8; i++) dano += Math.floor(Math.random() * 6) + 1;
-    dano += 8;
+    const dmgResult = parseAndRollDamageFormula("8d6+8 trevas");
 
     setLastActionLog({
       titulo: "🔮 Julgamento Herético em Cone de 12m! (Gasto -4 PM)",
-      detalhes: `Labaredas negras explodem em cone de 12m causando ${dano} de dano de Trevas e Fogo (Reflexos CD 25 reduz à metade). Quem falhar fica CONDENADO (+1d6 de dano de qualquer fonte na próxima rodada).`,
+      detalhes: `Labaredas negras explodem em cone de 12m causando ${dmgResult.total} de dano (${dmgResult.breakdown}) de Trevas e Fogo (Reflexos CD 25 reduz à metade). Quem falhar fica CONDENADO (+1d6 de dano de qualquer fonte na próxima rodada).`,
       tipo: "magia"
     });
   };
@@ -144,13 +137,11 @@ export const BossArena: React.FC = () => {
       return;
     }
     handleModifyPM(-6);
-    let dano = 0;
-    for (let i = 0; i < 6; i++) dano += Math.floor(Math.random() * 8) + 1;
-    dano += 12;
+    const dmgResult = parseAndRollDamageFormula("6d8+12 fogo");
 
     setLastActionLog({
       titulo: "🔥 Colunas de Fogo Profano do Abismo! (Gasto -6 PM)",
-      detalhes: `Duas colunas de 3m de raio e 15m de altura irrompem do piso! Causa ${dano} de dano de Fogo e Trevas (Reflexos CD 25 reduz metade), ignorando metade de qualquer RD elemental do herói.`,
+      detalhes: `Duas colunas de 3m de raio e 15m de altura irrompem do piso! Causa ${dmgResult.total} de dano (${dmgResult.breakdown}) de Fogo e Trevas (Reflexos CD 25 reduz metade), ignorando metade de qualquer RD elemental do herói.`,
       tipo: "magia"
     });
   };
@@ -175,12 +166,10 @@ export const BossArena: React.FC = () => {
 
   // 6. Ação de Chefe: Repulsa Sacrílega
   const handleRepulsaSacrilega = () => {
-    let dano = 0;
-    for (let i = 0; i < 3; i++) dano += Math.floor(Math.random() * 8) + 1;
-    dano += 6;
+    const dmgResult = parseAndRollDamageFormula("3d8+6 impacto");
     setLastActionLog({
       titulo: "⚡ AÇÃO DE CHEFE: Repulsa Sacrílega da Oitava Estrela!",
-      detalhes: `Onda de choque profana em raio de 9m ao redor de Severian: todos os heróis são empurrados 6m para trás e sofrem ${dano} de dano de impacto e trevas (Fortitude CD 25 reduz metade e evita empurrão).`,
+      detalhes: `Onda de choque profana em raio de 9m ao redor de Severian: todos os heróis são empurrados 6m para trás e sofrem ${dmgResult.total} de dano (${dmgResult.breakdown}) de impacto e trevas (Fortitude CD 25 reduz metade e evita empurrão).`,
       tipo: "chefe"
     });
   };
@@ -219,12 +208,11 @@ export const BossArena: React.FC = () => {
     }
     handleModifyPM(-10);
     setApocalipseUsado(true);
-    let dano = 0;
-    for (let i = 0; i < 10; i++) dano += Math.floor(Math.random() * 10) + 1;
+    const dmgResult = parseAndRollDamageFormula("10d10 profano");
 
     setLastActionLog({
       titulo: "🌟 APOCALIPSE MENOR DE FERREN! (Gasto -10 PM)",
-      detalhes: `A Oitava Estrela explode em supernova profana que cobre toda a arena (raio 15m)! Causa ${dano} de dano profano em TODOS os heróis (Reflexos CD 25 reduz à metade).`,
+      detalhes: `A Oitava Estrela explode em supernova profana que cobre toda a arena (raio 15m)! Causa ${dmgResult.total} de dano profano (${dmgResult.breakdown}) em TODOS os heróis (Reflexos CD 25 reduz à metade).`,
       tipo: "magia"
     });
   };

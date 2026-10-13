@@ -3293,6 +3293,890 @@ export const NPC_DATABASE: Record<string, NPCStats> = {
       citacao: "'Vocês rastejam sob o sol acreditando na própria liberdade... mas a terra, o céu e até o sopro nos seus pulmões pertencem ao senhor de Aslothia.'",
       notasMestre: "Ficha oficial de Tormenta 20 (Ameaças de Arton, ND S). No Ato III de CASSANDRA, demonstre o poder avassalador de Ferren: mesmo que os heróis façam rolagens heroicas, a Defesa 66, RD 20, Presença Opressora CD 55 e Contramágica Superior deixam claro que a missão é sobreviver e guiar Cassandra até a ponte antes que a fortaleza seja engolida pelas trevas!"
     }
+  },
+
+  guardas_aslavi: {
+    id: "guardas_aslavi",
+    name: "Guardas de Aslavi",
+    role: "Guarnição do Portão (Esqueletos de Elite & Aparição)",
+    category: "ameaca",
+    nd: 5,
+    aventura: "O Leilão de Aslavi / Mansão Bac Arat",
+    tipo: "Morto-vivo Médio (Guarnição de Sentinelas)",
+    tamanho: "Médio",
+    deslocamento: "9m (6q)",
+    description: "Os quatro guardas do portão são esqueletos de elite (Tormenta20, p. 283). Os dois que ficam no topo da torre usam bestas pesadas (+17, 1d12+5, 19), mas também podem atacar com espadas. O oficial do portão é uma aparição (Tormenta20, p. 283). Mesmo de dia, ela não sofre os efeitos de exposição a luz solar, pois o clima em Aslavi é sempre encoberto. Se o combate durar mais de cinco rodadas, no início da sexta, 1d4+1 esqueletos surgem (normais, não de elite).",
+    atributos: {
+      for: 18,
+      des: 16,
+      con: 14,
+      int: 10,
+      sab: 10,
+      car: 10
+    },
+    pericias: [
+      { nome: "Percepção", mod: 10 },
+      { nome: "Pontaria", mod: 17 },
+      { nome: "Luta", mod: 14 },
+      { nome: "Iniciativa", mod: 10 }
+    ],
+    combatStats: {
+      pv: 110,
+      pm: 0,
+      defesa: 22,
+      iniciativa: 10,
+      rd: "5/corte ou impacto",
+      sentidos: "Visão no Escuro, Percepção +10",
+      resistencias: [
+        "Imunidades Padrão de Morto-vivo",
+        "Oficial Aparição Incorpóreo (50% de chance de ignorar ataques corpóreos mundanos)",
+        "Redução de Dano 5/corte ou impacto nos esqueletos"
+      ],
+      ataques: [
+        {
+          nome: "Besta Pesada da Torre",
+          teste: "Pontaria +17",
+          mod: 17,
+          dano: "1d12+5",
+          tipo: "Perfuração",
+          alcance: "Longo (90m)",
+          critico: "19/x2",
+          especial: "Disparada pelos 2 esqueletos no topo da torre com bônus de elevação."
+        },
+        {
+          nome: "Espada Longa dos Guardas",
+          teste: "Luta +14",
+          mod: 14,
+          dano: "1d8+5",
+          tipo: "Corte",
+          alcance: "Corpo a corpo",
+          critico: "19/x2"
+        },
+        {
+          nome: "Toque Incorpóreo da Aparição",
+          teste: "Toque +15",
+          mod: 15,
+          dano: "2d8+4",
+          tipo: "Trevas",
+          alcance: "Corpo a corpo",
+          especial: "Ataque de toque ignora armadura. Alvo deve passar em Fortitude CD 19 ou sofre 1d4 de dreno de Força."
+        }
+      ],
+      habilidades: [
+        {
+          nome: "Céu Encoberto de Aslavi",
+          tipoAcao: "Passiva",
+          desc: "Mesmo durante o dia, a Aparição oficial do portão não sofre qualquer penalidade ou dano por exposição à luz solar, pois o clima em Aslavi é perpetuamente cinzento e nublado."
+        },
+        {
+          nome: "Reforço Necromântico (6ª Rodada)",
+          tipoAcao: "Gatilho de Turno",
+          desc: "Se o combate durar mais de cinco rodadas, no início da sexta rodada 1d4+1 esqueletos comuns (normais, não de elite) emergem das criptas para reforçar a guarnição."
+        }
+      ]
+    },
+    equipamentos: [
+      "Bestas pesadas com virotes de aço",
+      "Espadas longas antigas e escudos reforçados",
+      "Restos de armaduras de Aslavi"
+    ],
+    taticas: "Os dois esqueletos do topo da torre disparam continuamente com suas bestas pesadas (+17, 1d12+5, 19) focando conjuradores e alvos sem cobertura. Os outros dois esqueletos travam combate corporal com espadas na entrada. A aparição oficial atravessa paredes e portões para drenar a Força dos guerreiros na linha de frente. Se os aventureiros demorarem mais de 5 rodadas, reforços de 1d4+1 esqueletos chegam no 6º turno.",
+    roleplay: {
+      personalidade: "Implacáveis, silenciosos e eternamente vigilantes nos portões de Aslavi.",
+      citacao: "'Os portões de Aslavi só se abrem para os mortos e para os convidados de honra... vocês não são nenhum dos dois.'",
+      notasMestre: "Encontro oficial de Tormenta20 (p. 283). Permita que personagens furtivos usem o nevoeiro de Aslavi para contornar ou emboscar a torre."
+    }
+  },
+
+  sihnion_sillion: {
+    id: "sihnion_sillion",
+    name: "Sihnion & Sillion",
+    role: "Gêmeos Espadachins / Nobres Arrogantes do Leilão",
+    category: "antagonista",
+    nd: 5,
+    aventura: "O Leilão de Aslavi / Mansão Bac Arat",
+    tipo: "Elfo 14, Médio",
+    tamanho: "Médio",
+    deslocamento: "12m (8q)",
+    description: "Esses três elfos arrogantes acham que merecem uma vida de luxo na alta sociedade, e que participar de um leilão de Aslavi é o caminho para isso. Sihnion e Sillion são gêmeos e espadachins formidáveis. Os dois estão dispostos a roubar e matar para conseguir o que almejam!",
+    atributos: {
+      for: 11,
+      des: 24,
+      con: 16,
+      int: 16,
+      sab: 8,
+      car: 10
+    },
+    pericias: [
+      { nome: "Acrobacia", mod: 18 },
+      { nome: "Intimidação", mod: 11 },
+      { nome: "Iniciativa", mod: 18 },
+      { nome: "Percepção", mod: 12 },
+      { nome: "Luta", mod: 22 }
+    ],
+    combatStats: {
+      pv: 70,
+      pm: 0,
+      defesa: 26,
+      iniciativa: 18,
+      rd: 0,
+      sentidos: "Percepção +12, Visão na Penumbra",
+      resistencias: [
+        "Fortitude +10, Reflexos +20, Vontade +10"
+      ],
+      ataques: [
+        {
+          nome: "Florete Duplo Pungente (x2)",
+          teste: "Luta +22",
+          mod: 22,
+          dano: "1d6+14",
+          tipo: "Perfuração",
+          alcance: "Corpo a corpo",
+          critico: "17/x2",
+          especial: "Dois ataques com floretes por ação padrão. Acerto crítico causa +1d10 de dano extra (total 2d6+1d10+14)!"
+        },
+        {
+          nome: "Adaga Arremessada",
+          teste: "Pontaria +18",
+          mod: 18,
+          dano: "1d4+10",
+          tipo: "Perfuração",
+          alcance: "Curto (9m)",
+          critico: "19/x2"
+        }
+      ],
+      habilidades: [
+        {
+          nome: "Gêmeos Espadachins",
+          tipoAcao: "Passiva",
+          desc: "Tanto Sihnion quanto Sillion fazem dois ataques com seus floretes por ação padrão. Além disso, se fizerem um acerto crítico, causam +1d10 de dano extra (para um total devastador de 2d6+1d10+14)."
+        }
+      ]
+    },
+    equipamentos: [
+      "Adaga x2",
+      "Florete pungente de mitral (crítico 17)",
+      "Couro batido reforçado sob medida"
+    ],
+    tesouro: "Padrão",
+    taticas: "Os gêmeos sincronizam seus passos com Acrobacia +18 para flanquear e cercar os heróis mais frágeis. Cada ação padrão deles desfere dois estocadas com o florete (+22, dano 1d6+14). Com margem de ameaça 17, buscam o acerto crítico freneticamente para somar +1d10 de dano (2d6+1d10+14).",
+    roleplay: {
+      personalidade: "Vaidosos, cruéis, impacientes e esnobes. Riem do equipamento alheio e desprezam não-elfos.",
+      citacao: "'Vocês não passam de pedras no caminho para a alta sociedade de Aslavi. Um golpe limpo de mitral basta para encerrar essa discussão.'",
+      notasMestre: "Lutam em conjunto com sua irmã mais velha Siora (ND 6). Se Siora cair, tornam-se agressivos e imprudentes."
+    }
+  },
+
+  siora: {
+    id: "siora",
+    name: "Siora",
+    role: "Bruxa Élfica / Líder do Trio de Elfos",
+    category: "antagonista",
+    nd: 6,
+    aventura: "O Leilão de Aslavi / Mansão Bac Arat",
+    tipo: "Elfa 16, Média",
+    tamanho: "Médio",
+    deslocamento: "12m (8q)",
+    description: "Siora é a irmã mais velha dos gêmeos Sihnion e Sillion, e uma bruxa poderosa e ardilosa. É o cérebro por trás da ambição do trio de roubar e matar para conquistar luxo no leilão de Aslavi. Conjuradora impiedosa, domina necromancia destrutiva e magias de trevas.",
+    atributos: {
+      for: 8,
+      des: 20,
+      con: 14,
+      int: 24,
+      sab: 10,
+      car: 14
+    },
+    pericias: [
+      { nome: "Conhecimento", mod: 21 },
+      { nome: "Misticismo", mod: 23 },
+      { nome: "Iniciativa", mod: 19 },
+      { nome: "Percepção", mod: 16 },
+      { nome: "Vontade", mod: 14 }
+    ],
+    combatStats: {
+      pv: 64,
+      pm: 71,
+      defesa: 23,
+      iniciativa: 19,
+      rd: 0,
+      sentidos: "Percepção +16, Visão na Penumbra",
+      resistencias: [
+        "Fortitude +10, Reflexos +15, Vontade +14"
+      ],
+      ataques: [
+        {
+          nome: "Adaga de Mitral",
+          teste: "Luta +13",
+          mod: 13,
+          dano: "1d4-1",
+          tipo: "Perfuração",
+          alcance: "Corpo a corpo",
+          critico: "19/x2"
+        }
+      ],
+      magias: [
+        {
+          nome: "Crânio Voador de Vladislav",
+          custoPM: 10,
+          cd: 25,
+          escola: "Necromancia",
+          alcance: "Médio",
+          duracao: "Instantânea",
+          desc: "Siora lança a magia pagando 10 PM para disparar crânios voadores necróticos que causam 7d8+7 pontos de dano em três alvos diferentes simultaneamente! Reflexos CD 25 reduz à metade."
+        },
+        {
+          nome: "Amedrontar",
+          custoPM: 1,
+          cd: 25,
+          escola: "Necromancia",
+          alcance: "Curto",
+          duracao: "1d4 rodadas",
+          desc: "Alvo deve passar em Vontade CD 25 ou fica apavorado e foge. Se passar, fica abalado por 1 rodada."
+        },
+        {
+          nome: "Manto de Sombras",
+          custoPM: 3,
+          cd: 25,
+          escola: "Ilusão",
+          alcance: "Pessoal",
+          duracao: "Cena",
+          desc: "Sombras escuras cobrem o corpo de Siora, conferindo camuflagem (ataques contra ela têm 20% de chance de falha) e +10 em testes de Furtividade."
+        },
+        {
+          nome: "Tentáculos de Trevas",
+          custoPM: 3,
+          cd: 25,
+          escola: "Convocação / Trevas",
+          alcance: "Médio (Esfera 6m)",
+          duracao: "Cena",
+          desc: "Tentáculos negros surgem do piso agarrando todos na área. Criaturas presas sofrem 4d6 de dano de trevas por rodada e têm o deslocamento zerado."
+        }
+      ]
+    },
+    equipamentos: [
+      "Adaga de mitral",
+      "Vestes arcanas escuras de veludo",
+      "Focos necromânticos de Aslavi"
+    ],
+    tesouro: "Padrão",
+    taticas: "Siora inicia o combate na retaguarda conjurando Manto de Sombras para se proteger. Em seguida, lança Tentáculos de Trevas (CD 25) para prender os combatentes heróicos e desfere o devastador Crânio Voador de Vladislav pagando 10 PM para infligir 7d8+7 de dano em três alvos simultâneos. Se alguém ameaçar se aproximar, castiga com Amedrontar (CD 25).",
+    roleplay: {
+      personalidade: "Calculista, arrogante, cruel e manipuladora.",
+      citacao: "'Meus irmãos são a distração perfeita para que minha magia parta suas almas em pedaços.'",
+      notasMestre: "Irmã mais velha de Sihnion e Sillion. Possui 71 PM, o que lhe permite usar o Crânio Voador aprimorado várias vezes durante o combate!"
+    }
+  },
+
+  dazan_vampiro: {
+    id: "dazan_vampiro",
+    name: "Dazan, o Vampiro Falido",
+    role: "Vampiro Decadente & Faminto",
+    category: "antagonista",
+    nd: 11,
+    aventura: "O Leilão de Aslavi / Mansão Bac Arat",
+    tipo: "Morto-vivo 16, Médio (Vampiro Fatigado)",
+    tamanho: "Médio",
+    deslocamento: "6m (reduzido pela condição Fatigado)",
+    description: "Dazan é um vampiro que já viu dias muito melhores. Ao descobrir que os personagens possuem um convite valioso para a mansão Bac Arat, deseja visitar a mansão a qualquer custo e tenta roubá-los. Porém, atormentado por uma fome insaciável, não consegue resistir e bebe o sangue de outro hóspede da taverna — servindo como a pista definitiva para que o grupo o encontre. Dazan tem as estatísticas de um Vampiro de Tormenta20 (p. 284), mas com a condição Fatigado pela fraqueza da fome.",
+    atributos: {
+      for: 18,
+      des: 20,
+      con: 18,
+      int: 14,
+      sab: 14,
+      car: 20
+    },
+    pericias: [
+      { nome: "Luta", mod: 21 },
+      { nome: "Furtividade", mod: 18 },
+      { nome: "Percepção", mod: 18 },
+      { nome: "Enganação", mod: 18 },
+      { nome: "Iniciativa", mod: 18 },
+      { nome: "Vontade", mod: 17 }
+    ],
+    combatStats: {
+      pv: 136,
+      pm: 45,
+      defesa: 30,
+      iniciativa: 18,
+      rd: "10/mágico ou prata",
+      sentidos: "Percepção +18, Visão no Escuro, Faro",
+      resistencias: [
+        "Fortitude +16, Reflexos +18, Vontade +17",
+        "Redução de Dano 10/mágico ou prata",
+        "Condição Fatigado permanente até saciar a fome (–2 em Força e Destreza já computado)",
+        "Imunidades Padrão de Morto-vivo"
+      ],
+      ataques: [
+        {
+          nome: "Mordida Vampírica Faminta",
+          teste: "Luta +21",
+          mod: 21,
+          dano: "2d6+9",
+          tipo: "Perfuração",
+          alcance: "Corpo a corpo",
+          critico: "x2",
+          especial: "Ao atingir ou agarrar uma criatura, Dazan realiza Dreno de Sangue: a vítima perde 1d4 de Constituição e Dazan recupera imediatamente 15 PV!"
+        },
+        {
+          nome: "Garras Famintas (x2)",
+          teste: "Luta +21",
+          mod: 21,
+          dano: "1d8+9",
+          tipo: "Corte",
+          alcance: "Corpo a corpo",
+          critico: "19/x2"
+        }
+      ],
+      habilidades: [
+        {
+          nome: "Condição Fatigado (Fome Atroz)",
+          tipoAcao: "Passiva / Penalidade",
+          desc: "Pela fome extrema, Dazan sofre –2 em Força e Destreza (já descontado em suas perícias e ataques), desloca-se a metade da velocidade e não pode correr."
+        },
+        {
+          nome: "Dreno de Sangue",
+          tipoAcao: "Ação Padrão (ou com Mordida)",
+          desc: "Ao morder um alvo indefeso ou agarrado, drena seu sangue causando 1d4 pontos de dano de Constituição e curando 15 PV de Dazan."
+        },
+        {
+          nome: "Olhar Hipnótico",
+          tipoAcao: "Ação Padrão (3 PM)",
+          custoPM: 3,
+          cd: 24,
+          desc: "Alvo em alcance curto que olhe nos olhos de Dazan deve fazer teste de Vontade CD 24 ou fica paralisado/fascinado até o próximo turno dele."
+        },
+        {
+          nome: "Forma de Névoa / Morcego",
+          tipoAcao: "Ação Padrão (3 PM)",
+          custoPM: 3,
+          desc: "Dazan pode assumir forma de névoa gasosa (RD 20, voo 6m) ou forma de morcego gigante para tentar escapar ou surpreender inimigos."
+        },
+        {
+          nome: "Regeneração 10",
+          tipoAcao: "Início de Turno",
+          desc: "Dazan recupera 10 PV no início de cada um de seus turnos. Dano de fogo ou luz solar cancela a regeneração nessa rodada."
+        }
+      ]
+    },
+    equipamentos: [
+      "Fraque aristocrático rasgado e manchado",
+      "Anel de sinete desgastado",
+      "Capa de veludo poeirenta"
+    ],
+    taticas: "Desesperado por sangue para recuperar sua força total, Dazan usa o Olhar Hipnótico (CD 24) para imobilizar o herói mais saudável e cravar suas presas com a Mordida Vampírica (+21, drena 1d4 Con e recupera 15 PV). Se for reduzido a menos de 40 PV, transmuta-se em névoa (3 PM) para fugir pelas frestas da taverna.",
+    roleplay: {
+      personalidade: "Dramático, nervoso, decadente e faminto. Alterna entre elegância aristocrática e fúria animalesca.",
+      citacao: "'Vocês não entendem o que é ter sangue nobre e a garganta queimando em agonia seca... entreguem o convite de Bac Arat e um pouco de veia!'",
+      notasMestre: "Monstro oficial de Tormenta20 (p. 284). A condição Fatigado o torna vulnerável a táticas inteligentes dos jogadores."
+    }
+  },
+
+  enxame_papadiim: {
+    id: "enxame_papadiim",
+    name: "Enxame de Papa-Dim",
+    role: "Monstro Comedor de Moedas & Ouro",
+    category: "ameaca",
+    nd: 8,
+    aventura: "O Leilão de Aslavi / Mansão Bac Arat",
+    tipo: "Monstro 10, Grande (Enxame de Bolsas Vorazes)",
+    tamanho: "Grande",
+    deslocamento: "6m (4q)",
+    description: "Esta criatura parece uma bolsa de moedas viva com um metro de altura, dourada, gelatinosa e levemente translúcida. Dentro de seu corpo, é possível ver diversos objetos pequeninos, que fazem um tilintar alto quando ela se locomove saltando. Tritura com dentinhos afiados tudo que vê pela frente em busca de ouro e joias. Se a vítima não tiver nada valioso, continua a chafurdar seu corpo até destroçar órgãos em busca de uma mísera moeda. A lenda diz que nasceram de algibeiras esquecidas que absorveram a ganância de seus donos, habitando a lendária 'Floresta dos Papa-Dim' nos jardins de Bac Arat.",
+    atributos: {
+      for: 20,
+      des: 14,
+      con: 20,
+      int: 6,
+      sab: 10,
+      car: 6
+    },
+    pericias: [
+      { nome: "Percepção", mod: 22 },
+      { nome: "Iniciativa", mod: 8 },
+      { nome: "Fortitude", mod: 14 }
+    ],
+    combatStats: {
+      pv: 150,
+      pm: 0,
+      defesa: 14,
+      iniciativa: 8,
+      rd: "Metade do dano de ataques com armas",
+      sentidos: "Percepção +22, Visão no Escuro, Faro para Ouro",
+      resistencias: [
+        "Fortitude +14, Reflexos +11, Vontade +5",
+        "Imune a manobras de combate e a efeitos de alvo único sem dano",
+        "Sofre apenas metade do dano de ataques com armas",
+        "Sofre 50% a mais de dano por efeitos de área"
+      ],
+      ataques: [
+        {
+          nome: "Enxame Voraz (Fim do Turno)",
+          teste: "Dano Automático",
+          dano: "6d6+5",
+          tipo: "Perfuração",
+          alcance: "Espaço ocupado pelo enxame",
+          especial: "No fim de seu turno, causa 6d6+5 de dano de perfuração automaticamente a qualquer personagem no espaço ocupado pelo enxame!"
+        }
+      ],
+      habilidades: [
+        {
+          nome: "Mordida Trituradora",
+          tipoAcao: "Reação ao Dano",
+          desc: "Uma criatura que sofra dano do enxame precisa fazer um teste de Fortitude (CD 20). Se falhar, fica atordoada por uma rodada e sangrando."
+        },
+        {
+          nome: "Enxame",
+          tipoAcao: "Passiva",
+          desc: "Pode entrar no espaço ocupado por outros personagens. Imune a manobras e feitiços de alvo único sem dano. Sofre apenas metade do dano de ataques com armas, mas sofre 50% a mais de dano por efeitos de área."
+        },
+        {
+          nome: "Ganância Voraz",
+          tipoAcao: "Fraqueza / Distração",
+          desc: "Se um personagem jogar para o enxame moedas ou objetos no valor de T$ 100 ou mais, os papa-dim se concentram avidamente em devorar os objetos, ficando atordoados por uma rodada inteira!"
+        }
+      ]
+    },
+    equipamentos: [],
+    tesouro: "Moedas e gemas no valor de T$ 6d6 x 100 no interior dos corpos gelatinosos.",
+    taticas: "O enxame avança pulando até invadir o espaço do aventureiro mais reluzente ou com armadura metálica. No fim de seu turno, causa 6d6+5 de perfuração automático e força o teste de Fortitude CD 20 (atordoamento e sangramento). Aventureiros espertos podem atirar moedas (T$ 100+) para atordoar a criatura por uma rodada enquanto atacam com magias de área (+50% dano).",
+    roleplay: {
+      personalidade: "Frenético, insaciável e movido pelo tilintar hipnótico do ouro.",
+      citacao: "*Tilintar metálico ecoando em dentes afiados mastigando ouro puro*",
+      notasMestre: "Monstro 10 Grande. Excelente oportunidade tática para os heróis usarem seus tesouros mundanos para ganhar tempo contra a massa de 150 PV."
+    }
+  },
+
+  irmas_medusas: {
+    id: "irmas_medusas",
+    name: "Irmãs Medusas",
+    role: "Trio de Medusas Barraqueiras / Cultistas de Sszzaas",
+    category: "antagonista",
+    nd: 10,
+    aventura: "O Leilão de Aslavi / Mansão Bac Arat",
+    tipo: "Monstro 14, Médio",
+    tamanho: "Médio",
+    deslocamento: "9m (6q)",
+    description: "As três irmãs medusas barraqueiras são cultistas ardilosas de Sszzaas, o Deus da Traição (Tormenta20, p. 291). Estão presentes no leilão da mansão Bac Arat em busca de objetos mágicos e artefatos poderosos, mas o que mais adoram é armar intrigas, causar barracos violentos e semear confusão para pilhar o leilão na surdina.",
+    atributos: {
+      for: 12,
+      des: 22,
+      con: 16,
+      int: 16,
+      sab: 14,
+      car: 20
+    },
+    pericias: [
+      { nome: "Enganação", mod: 20 },
+      { nome: "Furtividade", mod: 18 },
+      { nome: "Iniciativa", mod: 16 },
+      { nome: "Percepção", mod: 16 },
+      { nome: "Pontaria", mod: 20 },
+      { nome: "Luta", mod: 18 }
+    ],
+    combatStats: {
+      pv: 120,
+      pm: 35,
+      defesa: 28,
+      iniciativa: 16,
+      rd: 0,
+      sentidos: "Percepção +16, Visão no Escuro",
+      resistencias: [
+        "Fortitude +12, Reflexos +18, Vontade +14",
+        "Imunidade completa a Venenos e Peçonhas"
+      ],
+      ataques: [
+        {
+          nome: "Arco Longo com Peçonha de Sszzaas",
+          teste: "Pontaria +20",
+          mod: 20,
+          dano: "1d8+8",
+          tipo: "Perfuração",
+          alcance: "Médio (30m)",
+          critico: "x3",
+          especial: "Injeta veneno cultista: Fortitude CD 22 evita ou sofre 2d12 de perda de PV e condição Envenenado."
+        },
+        {
+          nome: "Mordida de Serpentes Cabeludas",
+          teste: "Luta +18",
+          mod: 18,
+          dano: "1d4+6",
+          tipo: "Perfuração",
+          alcance: "Corpo a corpo",
+          especial: "As serpentes na cabeça mordem e injetam veneno de Sszzaas (Fortitude CD 22 ou 2d12 de perda de PV)."
+        },
+        {
+          nome: "Adaga Oculta de Serpente",
+          teste: "Luta +18",
+          mod: 18,
+          dano: "1d4+8",
+          tipo: "Perfuração",
+          alcance: "Corpo a corpo",
+          critico: "19/x2"
+        }
+      ],
+      habilidades: [
+        {
+          nome: "Olhar Petrificante",
+          tipoAcao: "Ação Padrão (3 PM)",
+          custoPM: 3,
+          cd: 23,
+          desc: "Qualquer criatura em alcance curto (9m) que mire os olhos de uma das medusas deve fazer um teste de Fortitude (CD 23). Se falhar, fica Lenta. Se falhar uma segunda vez enquanto estiver Lenta, seu corpo vira pedra permanentemente (Petrificado)!"
+        },
+        {
+          nome: "Bote da Traição de Sszzaas",
+          tipoAcao: "Passiva",
+          desc: "Causa +2d6 pontos de dano adicional contra criaturas que estejam flanqueadas, desprevenidas ou sob efeito do Olhar Petrificante."
+        }
+      ]
+    },
+    equipamentos: [
+      "Arco longo magistral de madeira escura",
+      "Aljava com flechas envenenadas de Sszzaas",
+      "Vestidos exóticos de gala para o leilão",
+      "Adagas cerimoniais curvas"
+    ],
+    tesouro: "Dobro (joias e itens mágicos saqueados do leilão)",
+    taticas: "As medusas agem espalhadas no salão. Cada uma busca contato visual com alvos diferentes usando Olhar Petrificante (CD 23) para desacelerar e petrificar o grupo, enquanto disparam flechas venenosas (+20, dano 1d8+8 mais 2d12 veneno). Se acuadas, usam Enganação +20 para fingir rendição e dar um golpe traiçoeiro.",
+    roleplay: {
+      personalidade: "Barraqueiras, venenosas, zombeteiras e ardilosas ao extremo.",
+      citacao: "'Olhe nos meus olhos, querido... promete que não vai virar mármore antes de eu pegar sua carteira?'",
+      notasMestre: "Monstro oficial de Tormenta20 (p. 291). Três medusas agindo em sinergia aumentam imensamente a letalidade do encontro devido a três testes de petrificação por rodada."
+    }
+  },
+
+  guardia_cofre: {
+    id: "guardia_cofre",
+    name: "Guardiã do Cofre",
+    role: "Hidra Monstruosa de Bac Arat",
+    category: "ameaca",
+    nd: 11,
+    aventura: "O Leilão de Aslavi / Mansão Bac Arat",
+    tipo: "Monstro 16, Enorme",
+    tamanho: "Enorme",
+    deslocamento: "9m (6q), natação 9m",
+    description: "A guardiã do cofre da mansão Bac Arat é uma hidra colossal de escamas negras (Tormenta20, p. 291). É uma criatura ancestral e implacável colocada para dilacerar qualquer ladrão que ouse invadir as câmaras de tesouro. Caso o combate esteja excessivamente difícil para o grupo, lembre os personagens de que eles podem fugir!",
+    atributos: {
+      for: 26,
+      des: 12,
+      con: 22,
+      int: 2,
+      sab: 12,
+      car: 6
+    },
+    pericias: [
+      { nome: "Percepção", mod: 18 },
+      { nome: "Iniciativa", mod: 10 },
+      { nome: "Fortitude", mod: 18 }
+    ],
+    combatStats: {
+      pv: 220,
+      pm: 0,
+      defesa: 24,
+      iniciativa: 10,
+      rd: 5,
+      sentidos: "Percepção +18, Faro, Visão na Penumbra",
+      resistencias: [
+        "Fortitude +18, Reflexos +12, Vontade +10",
+        "Redução de Dano 5"
+      ],
+      ataques: [
+        {
+          nome: "Mordidas Múltiplas da Hidra (x5 a x7)",
+          teste: "Luta +22",
+          mod: 22,
+          dano: "2d8+12",
+          tipo: "Perfuração",
+          alcance: "Corpo a corpo (alcance natural 3m)",
+          critico: "x2",
+          especial: "A hidra pode desferir um ataque de mordida por cabeça viva a cada rodada! (Começa com 5 cabeças ativas)."
+        }
+      ],
+      habilidades: [
+        {
+          nome: "Cabeças Múltiplas",
+          tipoAcao: "Passiva",
+          desc: "A hidra começa com 5 cabeças ativas. Para atacar uma cabeça específica, é preciso declarar um golpe com –4 de penalidade. Uma cabeça é decepada se sofrer pelo menos 30 pontos de dano cortante."
+        },
+        {
+          nome: "Regeneração Monstruosa & Duplicação",
+          tipoAcao: "Início de Turno",
+          desc: "A hidra recupera 20 PV no início de cada um de seus turnos. Para cada cabeça decepada, duas novas cabeças brotam no início de seu próximo turno (concedendo +40 PV e mais um ataque de mordida), a menos que o ferimento sofra dano de Fogo ou Ácido antes disso!"
+        },
+        {
+          nome: "Conselho Tático do Mestre",
+          tipoAcao: "Aviso de Narrativa",
+          desc: "Caso o combate esteja difícil demais ou as cabeças comecem a se multiplicar descontroladamente, lembre expressamente os personagens de que eles podem fugir e trancar as pesadas portas do cofre!"
+        }
+      ]
+    },
+    equipamentos: [],
+    tesouro: "O conteúdo inteiro do cofre protegido de Bac Arat.",
+    taticas: "A hidra não tem piedade: morde todos os alvos ao seu alcance com suas 5 cabeças (+22, 2d8+12). Conforme sofre dano, se os personagens deceparem cabeças sem aplicar fogo ou ácido, a hidra regenera 20 PV por rodada e adiciona novas cabeças, tornando-se ainda mais letal.",
+    roleplay: {
+      personalidade: "Feroz, territorial e voraz.",
+      citacao: "*Rugidos estrondosos sincronizados de cinco cabeças famintas ecoando pelo cofre de mármore*",
+      notasMestre: "Monstro oficial de Tormenta20 (p. 291). Lembre aos heróis da regra de fogo e ácido para cauterizar os cotos."
+    }
+  },
+
+  assassino_putrefato: {
+    id: "assassino_putrefato",
+    name: "Assassino Putrefato",
+    role: "Agente Necromântico de Elite de Aslothia",
+    category: "ameaca",
+    nd: 9,
+    aventura: "O Leilão de Aslavi / Mansão Bac Arat",
+    tipo: "Morto-vivo 13, Médio",
+    tamanho: "Médio",
+    deslocamento: "9m (6q)",
+    description: "Agentes de elite da coroa de Aslothia, essas criaturas são ladrões, bandoleiros e outros criminosos executados pelas autoridades do reino e então reanimados por necromancia. Em suas novas existências, usam suas antigas habilidades clandestinas — potencializadas pelos poderes sombrios da não-vida — e são completamente leais ao regente Ferren Asloth. Figuras soturnas e silenciosas, sempre com o corpo e o rosto completamente cobertos por bandana, chapéu e luvas. Se despidos, revelam corpos semidecompostos cobertos de tatuagens arcanas que emitem um sinistro brilho roxo pulsante — pura energia negativa.",
+    atributos: {
+      for: 14,
+      des: 24,
+      con: 14,
+      int: 13,
+      sab: 13,
+      car: 6
+    },
+    pericias: [
+      { nome: "Acrobacia", mod: 16 },
+      { nome: "Furtividade", mod: 19 },
+      { nome: "Iniciativa", mod: 17 },
+      { nome: "Percepção", mod: 11 },
+      { nome: "Luta", mod: 21 }
+    ],
+    combatStats: {
+      pv: 78,
+      pm: 0,
+      defesa: 27,
+      iniciativa: 17,
+      rd: "10/mágico",
+      sentidos: "Percepção +11, Visão no Escuro",
+      resistencias: [
+        "Fortitude +8, Reflexos +17, Vontade +11",
+        "Redução de Dano 10/mágico",
+        "Resistência a Magia +5 em testes de resistência",
+        "Evasão Aprimorada",
+        "Imunidades Padrão de Morto-vivo"
+      ],
+      ataques: [
+        {
+          nome: "Espada Púrpura Necrótica",
+          teste: "Luta +21",
+          mod: 21,
+          dano: "1d8+10 + 4d8 trevas",
+          tipo: "Corte + Trevas",
+          alcance: "Corpo a corpo",
+          critico: "19/x2",
+          especial: "Causa 4d8 de dano de trevas e sangramento cumulativo de 2d6 PV por rodada!"
+        },
+        {
+          nome: "Ataque Furtivo Necrótico",
+          teste: "Luta +21",
+          mod: 21,
+          dano: "+7d6",
+          tipo: "Trevas / Furtivo",
+          especial: "Uma vez por rodada contra alvos desprevenidos ou flanqueados."
+        }
+      ],
+      habilidades: [
+        {
+          nome: "Emanação de Trevas",
+          tipoAcao: "Ação Padrão",
+          desc: "O assassino putrefato emana tentáculos de energia negativa que envolvem uma criatura viva em alcance médio. A criatura sofre 6d8+6 pontos de dano de trevas e fica Fatigada. Um teste de Fortitude (CD 24) reduz o dano à metade e evita a condição."
+        },
+        {
+          nome: "Espada Púrpura Amaldiçoada",
+          tipoAcao: "Passiva no Ataque",
+          desc: "Alimenta-se da energia negativa de seus crimes. Criatura viva atingida sofre 4d8 de trevas e fica sangrando (cumulativo: 2d6 PV de dano por rodada). Se o assassino morrer, a arma se desfaz em pó e ferrugem."
+        },
+        {
+          nome: "Evasão Aprimorada",
+          tipoAcao: "Reação Defensiva",
+          desc: "Quando sofre um efeito que permite teste de Reflexos para reduzir dano à metade, o assassino não sofre dano algum se passar, e sofre apenas metade do dano se falhar."
+        },
+        {
+          nome: "Vulto Mortal",
+          tipoAcao: "Ação de Movimento",
+          desc: "Usa energia negativa corporal para criar um manto de sombras que o recobre até o fim da cena. Recebe camuflagem (ataques contra ele sofrem 20% de chance de falha), +10 em Furtividade e pode fintar como ação de movimento."
+        }
+      ]
+    },
+    equipamentos: [
+      "Couro batido ajustado, reforçado e abascanto",
+      "Espada púrpura singular de energia sombria",
+      "Kit de ladrão profissional de Aslothia",
+      "Bandana, chapéu de abas largas e luvas escuras"
+    ],
+    tesouro: "Metade",
+    taticas: "O assassino putrefato inicia o combate ativando Vulto Mortal (ação de movimento para ganhar 20% de camuflagem e +10 Furtividade). Move-se pelas sombras para desferir a Espada Púrpura com Ataque Furtivo (+21, 1d8+10 + 4d8 trevas + 7d6 furtivo + sangramento 2d6/rodada). Contra alvos distantes ou guerreiros pesados, desfere Emanação de Trevas (6d8+6 trevas e fadiga, Fort CD 24). Graças à Evasão Aprimorada e RD 10/mágico, é extremamente escorregadio.",
+    roleplay: {
+      personalidade: "Frio, mudo, focado e absolutamente leal ao Conde Ferren Asloth.",
+      citacao: "*Sussurro cadavérico inaudível saindo por baixo da bandana de couro*",
+      notasMestre: "Morto-vivo 13 Médio oficial. O sangramento da Espada Púrpura é cumulativo (cada acerto adiciona 2d6/rodada de perda contínua de PV)!"
+    }
+  },
+
+  ra_assassina: {
+    id: "ra_assassina",
+    name: "Rà",
+    role: "Assassina Ilusionista & Mercenária Performer",
+    category: "antagonista",
+    nd: 11,
+    aventura: "O Leilão de Aslavi / Mansão Bac Arat",
+    tipo: "Humana 18, Média",
+    tamanho: "Médio",
+    deslocamento: "12m (8q)",
+    description: "Esta assassina profissional é famosa no submundo do Reinado e além. Mulher alta e esguia em vestimentas exóticas e chamativas que combinam com seu estilo de luta espalhafatoso — mesclando golpes acrobáticos de florete, truques de ilusão e Bolas de Fogo destruidoras. Seu lema é fazer de todo ato uma bela performance. Boatos dizem que possui habilidades inigualáveis de mimetismo. Foi contratada pelo próprio Conde Ferren Asloth para impedir que o 'Pulmão da Montanha' caia em mãos erradas. Sua autoconfiança desmedida e voz estridente escondem uma periculosidade extrema.",
+    atributos: {
+      for: 12,
+      des: 22,
+      con: 16,
+      int: 18,
+      sab: 12,
+      car: 22
+    },
+    pericias: [
+      { nome: "Acrobacia", mod: 21 },
+      { nome: "Atuação", mod: 25 },
+      { nome: "Enganação", mod: 21 },
+      { nome: "Jogatina", mod: 21 },
+      { nome: "Iniciativa", mod: 27 },
+      { nome: "Percepção", mod: 16 },
+      { nome: "Luta", mod: 27 }
+    ],
+    combatStats: {
+      pv: 90,
+      pm: 60,
+      defesa: 29,
+      iniciativa: 27,
+      rd: 0,
+      sentidos: "Percepção +16",
+      resistencias: [
+        "Fortitude +12, Reflexos +23, Vontade +16",
+        "Imunidade completa a Atordoamento e Encantamento",
+        "Evasão Aprimorada"
+      ],
+      ataques: [
+        {
+          nome: "Florete Magnífico",
+          teste: "Luta +27",
+          mod: 27,
+          dano: "1d6+15",
+          tipo: "Perfuração",
+          alcance: "Corpo a corpo",
+          critico: "16/x2",
+          especial: "Margem de ameaça 16. Pode desferir até 4 ataques por rodada sob efeito de Velocidade e Espetáculo Mortal!"
+        }
+      ],
+      magias: [
+        {
+          nome: "Bola de Fogo",
+          custoPM: 9,
+          cd: 25,
+          escola: "Evocação",
+          alcance: "Médio",
+          duracao: "Instantânea",
+          desc: "Explosão flamejante lançada com 9 PM causando 12d6 pontos de dano de fogo em esfera de 6m. Reflexos CD 25 reduz à metade."
+        },
+        {
+          nome: "Toque Vampírico",
+          custoPM: 10,
+          cd: 25,
+          escola: "Necromancia",
+          alcance: "Junto do Florete",
+          duracao: "Instantânea",
+          desc: "Lança a magia junto com um ataque de florete gastando 10 PM. Causa +12d6 pontos de dano de trevas além do dano normal do florete e recupera metade do dano em PV!"
+        },
+        {
+          nome: "Imagem Espelhada",
+          custoPM: 7,
+          cd: 25,
+          escola: "Ilusão",
+          alcance: "Pessoal",
+          duracao: "Cena",
+          desc: "Rà gasta 7 PM para criar seis cópias ilusórias idênticas de si mesma, recebendo impressionantes +12 de bônus na Defesa!"
+        },
+        {
+          nome: "Velocidade",
+          custoPM: 3,
+          cd: 25,
+          escola: "Transmutação",
+          alcance: "Pessoal",
+          duracao: "Sustentada",
+          desc: "Rà ganha uma ação padrão adicional em cada um de seus turnos (permitindo atacar 4 vezes ou atacar 2 vezes e conjurar uma magia)."
+        },
+        {
+          nome: "Amedrontar",
+          custoPM: 1,
+          cd: 25,
+          escola: "Necromancia",
+          alcance: "Curto",
+          desc: "Vontade CD 25 ou apavorado por 1d4 rodadas."
+        },
+        {
+          nome: "Criar Ilusão",
+          custoPM: 1,
+          cd: 25,
+          escola: "Ilusão",
+          alcance: "Médio",
+          desc: "Cria imagens ou sons ilusórios perfeitos para despistar oponentes."
+        },
+        {
+          nome: "Disfarce Ilusório",
+          custoPM: 1,
+          cd: 25,
+          escola: "Ilusão",
+          alcance: "Pessoal",
+          desc: "Altera instantaneamente sua aparência para qualquer criatura que já tenha visto."
+        },
+        {
+          nome: "Leque Cromático",
+          custoPM: 1,
+          cd: 25,
+          escola: "Ilusão",
+          alcance: "Cone 4,5m",
+          desc: "Cone de luzes cintilantes atordoa e cega alvos fracos."
+        }
+      ],
+      habilidades: [
+        {
+          nome: "Distração Teatral",
+          tipoAcao: "Reação (1x/rodada)",
+          custoPM: 2,
+          desc: "Uma vez por rodada, quando atingida por um ataque, Rà pode gastar 2 PM para fazer um teste de Atuação (+25). Se o resultado for maior que o ataque do oponente, ela evita o ataque completamente!"
+        },
+        {
+          nome: "Espetáculo Mortal",
+          tipoAcao: "Ação Livre (Combate)",
+          custoPM: 1,
+          desc: "Quando usa a ação atacar, gasta 1 PM para fazer um ataque adicional com a mesma arma. Ao lançar uma magia com ação padrão, gasta 1 PM para fazer um ataque corpo a corpo como ação livre!"
+        },
+        {
+          nome: "Evasão Aprimorada",
+          tipoAcao: "Reação Defensiva",
+          desc: "Quando sofre um ataque que permite teste de Reflexos para reduzir o dano à metade, não sofre dano algum se passar, e sofre apenas metade se falhar."
+        },
+        {
+          nome: "Sortuda",
+          tipoAcao: "Reação Livre",
+          custoPM: 3,
+          desc: "Pode gastar 3 PM para rolar novamente um teste recém-realizado (apenas uma vez por teste)."
+        }
+      ]
+    },
+    equipamentos: [
+      "Armadura de couro ajustada, reforçada e defensora (+1 Defesa)",
+      "Florete magnífico (+2 no ataque/dano, margem de ameaça 16)",
+      "Kit de disfarces de alta nobreza e cosméticos arcanos"
+    ],
+    taticas: "Rà abre o combate conjurando Velocidade para ter uma ação padrão extra a cada rodada. Com isso, desfere quatro ataques de florete por rodada (graças a Espetáculo Mortal) ou ataca duas vezes e lança uma magia destrutiva. Se pressionada, conjura Imagem Espelhada (7 PM para +12 na Defesa, elevando-a para Defesa 41!). Quando atingida, ativa Distração Teatral (Atuação +25 gastando 2 PM) para anular o golpe. Se sofrer dano real, responde com Toque Vampírico (+12d6 dano de trevas e cura metade em PV). Se quiser liquidar grupos, lança Bola de Fogo (12d6 dano por 9 PM).",
+    roleplay: {
+      personalidade: "Dramática, megalomaníaca, infantil quando perde em apostas e implacável em batalha.",
+      citacao: "'A vida é apenas um palco vulgar... e vocês acabaram de receber o papel principal no meu massacre favorito!'",
+      notasMestre: "Humana 18 de ND 11. Um dos combates mais dinâmicos e desafiadores da aventura pelo leque de reações defensivas (Distração, Imagem Espelhada, Evasão Aprimorada) e ataques velozes."
+    }
   }
 };
 

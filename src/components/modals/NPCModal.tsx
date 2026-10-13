@@ -19,23 +19,47 @@ import {
   Compass, 
   Crosshair,
   Award,
-  ChevronRight
+  ChevronRight,
+  Search,
+  FileText,
+  MapPin
 } from 'lucide-react';
 import { NPCStats } from '@/types/adventure';
+import { CreatureCombatPanel } from '@/components/combat/CreatureCombatPanel';
 
 export const NPCModal: React.FC = () => {
-  const { selectedNPCForModal, openNPCModal, closeNPCModal, rollDice } = useAdventureStore();
-  const [activeTab, setActiveTab] = useState<'ficha' | 'taticas' | 'roleplay'>('ficha');
+  const { selectedNPCForModal, openNPCModal, closeNPCModal, rollDice, npcModalTab, setNPCModalTab } = useAdventureStore();
   const [categoryFilter, setCategoryFilter] = useState<'todos' | 'aliado' | 'antagonista' | 'coadjuvante' | 'ameaca'>('todos');
+  const [adventureFilter, setAdventureFilter] = useState<'todas' | 'aslavi' | 'cassandra'>('todas');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   if (!selectedNPCForModal) return null;
 
   const currentNpc = NPC_DATABASE[selectedNPCForModal] || NPC_DATABASE['cassandra'];
   const allNpcs = Object.values(NPC_DATABASE);
 
-  const filteredNpcs = categoryFilter === 'todos' 
-    ? allNpcs 
-    : allNpcs.filter(n => n.category === categoryFilter);
+  const filteredNpcs = allNpcs.filter(npc => {
+    // Filtro de Categoria
+    if (categoryFilter !== 'todos' && npc.category !== categoryFilter) return false;
+
+    // Filtro de Aventura
+    if (adventureFilter === 'aslavi') {
+      if (!npc.aventura?.includes('Aslavi') && !npc.aventura?.includes('Bac Arat')) return false;
+    } else if (adventureFilter === 'cassandra') {
+      if (npc.aventura?.includes('Aslavi') || npc.aventura?.includes('Bac Arat')) return false;
+    }
+
+    // Filtro de Busca
+    if (searchTerm.trim() !== '') {
+      const term = searchTerm.toLowerCase();
+      const matchName = npc.name.toLowerCase().includes(term);
+      const matchRole = npc.role.toLowerCase().includes(term);
+      const matchND = String(npc.nd).toLowerCase().includes(term);
+      if (!matchName && !matchRole && !matchND) return false;
+    }
+
+    return true;
+  });
 
   const getCategoryBadge = (cat: NPCStats['category']) => {
     switch (cat) {
@@ -64,16 +88,16 @@ export const NPCModal: React.FC = () => {
     >
       <div className="bg-[#121522] border border-[#c77dff]/40 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.95),0_0_30px_rgba(157,78,221,0.4)] overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
         
-        {/* TOP BAR: Seletor Rápido de Personagens */}
-        <div className="bg-[#0c0e17] border-b border-[#9d4edd]/30 p-3 flex flex-col gap-2 flex-shrink-0">
+        {/* TOP BAR: Seletor Rápido de Personagens & Filtros */}
+        <div className="bg-[#0c0e17] border-b border-[#9d4edd]/30 p-3 flex flex-col gap-2.5 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-[#ffd166]" />
               <h3 className="font-serif font-bold text-sm tracking-wider text-[#ffd166] uppercase">
-                Compêndio de Fichas dos Personagens & Ameaças
+                Acervo de Fichas & Painéis de Combate
               </h3>
               <span className="text-[11px] text-[#9aa0b4] hidden sm:inline">
-                ({allNpcs.length} Fichas T20 Disponíveis)
+                ({allNpcs.length} Fichas T20 • {filteredNpcs.length} visíveis)
               </span>
             </div>
 
@@ -86,73 +110,132 @@ export const NPCModal: React.FC = () => {
             </button>
           </div>
 
+          {/* Filtros de Aventura & Campo de Busca */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            {/* Seletor de Aventura */}
+            <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-thin">
+              <span className="text-gray-400 font-semibold text-[11px] mr-1 flex items-center gap-1 whitespace-nowrap">
+                <MapPin className="w-3 h-3 text-[#ffd166]" />
+                <span>Aventura:</span>
+              </span>
+              <button
+                onClick={() => setAdventureFilter('todas')}
+                className={`px-2 py-0.5 rounded-lg font-medium whitespace-nowrap transition-all ${
+                  adventureFilter === 'todas'
+                    ? 'bg-[#9d4edd] text-white shadow'
+                    : 'bg-white/5 text-gray-400 hover:text-white'
+                }`}
+              >
+                Todas ({allNpcs.length})
+              </button>
+              <button
+                onClick={() => setAdventureFilter('aslavi')}
+                className={`px-2 py-0.5 rounded-lg font-medium whitespace-nowrap transition-all ${
+                  adventureFilter === 'aslavi'
+                    ? 'bg-[#2a9d8f] text-white shadow'
+                    : 'bg-white/5 text-gray-400 hover:text-white'
+                }`}
+              >
+                🏰 Aslavi / Bac Arat (9)
+              </button>
+              <button
+                onClick={() => setAdventureFilter('cassandra')}
+                className={`px-2 py-0.5 rounded-lg font-medium whitespace-nowrap transition-all ${
+                  adventureFilter === 'cassandra'
+                    ? 'bg-[#e0a96d] text-gray-950 shadow'
+                    : 'bg-white/5 text-gray-400 hover:text-white'
+                }`}
+              >
+                📜 Cassandra (12)
+              </button>
+            </div>
+
+            {/* Campo de Busca Rápida */}
+            <div className="flex items-center gap-1.5 bg-[#181b2a] border border-white/10 rounded-xl px-2.5 py-1">
+              <Search className="w-3.5 h-3.5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar criatura ou ND..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="bg-transparent text-xs text-white placeholder-gray-500 outline-none w-36 sm:w-44"
+              />
+              {searchTerm && (
+                <button onClick={() => setSearchTerm('')} className="text-gray-500 hover:text-white">
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Filtros de Categoria */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin text-xs">
             <button
               onClick={() => setCategoryFilter('todos')}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all whitespace-nowrap ${
+              className={`px-2 py-0.5 rounded-lg font-semibold transition-all whitespace-nowrap ${
                 categoryFilter === 'todos'
-                  ? 'bg-[#9d4edd] text-white shadow-[0_0_10px_rgba(157,78,221,0.5)]'
-                  : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-white/5 text-gray-400 hover:text-white'
               }`}
             >
-              Todos ({allNpcs.length})
+              Todos ({filteredNpcs.length})
             </button>
             <button
               onClick={() => setCategoryFilter('aliado')}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all whitespace-nowrap ${
+              className={`px-2 py-0.5 rounded-lg font-semibold transition-all whitespace-nowrap ${
                 categoryFilter === 'aliado'
-                  ? 'bg-[#2a9d8f] text-white shadow-[0_0_10px_rgba(42,157,143,0.5)]'
-                  : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
+                  ? 'bg-[#2a9d8f] text-white'
+                  : 'bg-white/5 text-gray-400 hover:text-white'
               }`}
             >
-              🛡️ Aliados ({allNpcs.filter(n => n.category === 'aliado').length})
+              🛡️ Aliados
             </button>
             <button
               onClick={() => setCategoryFilter('antagonista')}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all whitespace-nowrap ${
+              className={`px-2 py-0.5 rounded-lg font-semibold transition-all whitespace-nowrap ${
                 categoryFilter === 'antagonista'
-                  ? 'bg-[#e63946] text-white shadow-[0_0_10px_rgba(230,57,70,0.5)]'
-                  : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
+                  ? 'bg-[#e63946] text-white'
+                  : 'bg-white/5 text-gray-400 hover:text-white'
               }`}
             >
-              💀 Chefes & Vilões ({allNpcs.filter(n => n.category === 'antagonista').length})
+              💀 Chefes & Vilões
             </button>
             <button
               onClick={() => setCategoryFilter('coadjuvante')}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all whitespace-nowrap ${
+              className={`px-2 py-0.5 rounded-lg font-semibold transition-all whitespace-nowrap ${
                 categoryFilter === 'coadjuvante'
-                  ? 'bg-[#e0a96d] text-gray-950 shadow-[0_0_10px_rgba(224,169,109,0.5)]'
-                  : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
+                  ? 'bg-[#e0a96d] text-gray-950'
+                  : 'bg-white/5 text-gray-400 hover:text-white'
               }`}
             >
-              📜 Coadjuvantes ({allNpcs.filter(n => n.category === 'coadjuvante').length})
+              📜 Coadjuvantes
             </button>
             <button
               onClick={() => setCategoryFilter('ameaca')}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all whitespace-nowrap ${
+              className={`px-2 py-0.5 rounded-lg font-semibold transition-all whitespace-nowrap ${
                 categoryFilter === 'ameaca'
-                  ? 'bg-[#5a189a] text-white shadow-[0_0_10px_rgba(90,24,154,0.5)]'
-                  : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
+                  ? 'bg-[#5a189a] text-white'
+                  : 'bg-white/5 text-gray-400 hover:text-white'
               }`}
             >
-              ⚔️ Tropas & Monstros ({allNpcs.filter(n => n.category === 'ameaca').length})
+              ⚔️ Tropas & Monstros
             </button>
           </div>
 
-          {/* Lista de Personagens para alternar com 1 clique */}
+          {/* Lista de Criaturas para alternar com 1 clique */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
             {filteredNpcs.map((npc) => {
               const isCurrent = npc.id === currentNpc.id;
               return (
                 <button
                   key={npc.id}
-                  onClick={() => openNPCModal(npc.id)}
+                  onClick={() => openNPCModal(npc.id, 'combate')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-all border ${
                     isCurrent
                       ? 'bg-gradient-to-r from-[#9d4edd] to-[#5a189a] text-white border-[#ffd166] shadow-[0_0_12px_rgba(157,78,221,0.6)] ring-1 ring-[#ffd166]'
                       : 'bg-[#181b2a] text-gray-300 border-white/5 hover:border-[#9d4edd]/50 hover:bg-[#202538]'
                   }`}
+                  title={`Abrir painel de combate de ${npc.name}`}
                 >
                   <span>{npc.name}</span>
                   <span className="text-[10px] opacity-75 font-mono">ND {npc.nd}</span>
@@ -162,7 +245,7 @@ export const NPCModal: React.FC = () => {
           </div>
         </div>
 
-        {/* HEADER DA FICHA DO PERSONAGEM ATIVO */}
+        {/* HEADER DA FICHA DA CRIATURA ATIVA */}
         <div className="p-4 sm:p-5 pb-3 border-b border-[#9d4edd]/25 bg-gradient-to-r from-[#181b2a] via-[#141724] to-[#181b2a] flex-shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
             <div>
@@ -173,6 +256,11 @@ export const NPCModal: React.FC = () => {
                 <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-[#ffd166]/20 text-[#ffd166] border border-[#ffd166]/40">
                   ND {currentNpc.nd}
                 </span>
+                {currentNpc.aventura && (
+                  <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-[#9d4edd]/20 text-[#c77dff] border border-[#9d4edd]/30">
+                    {currentNpc.aventura}
+                  </span>
+                )}
                 <span className="text-xs text-gray-400 font-mono">
                   {currentNpc.tipo} {currentNpc.tamanho ? `• ${currentNpc.tamanho}` : ''} {currentNpc.deslocamento ? `• Desl. ${currentNpc.deslocamento}` : ''}
                 </span>
@@ -186,42 +274,54 @@ export const NPCModal: React.FC = () => {
               </p>
             </div>
 
-            {/* Abas da Ficha */}
-            <div className="flex items-center gap-1 bg-[#0a0b10] border border-[#9d4edd]/30 p-1 rounded-xl self-start sm:self-auto">
+            {/* Abas da Ficha & Combate */}
+            <div className="flex items-center gap-1 bg-[#0a0b10] border border-[#9d4edd]/30 p-1 rounded-xl self-start sm:self-auto flex-wrap">
               <button
-                onClick={() => setActiveTab('ficha')}
+                onClick={() => setNPCModalTab('combate')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-serif font-bold transition-all flex items-center gap-1.5 ${
-                  activeTab === 'ficha'
+                  npcModalTab === 'combate'
+                    ? 'bg-gradient-to-r from-[#e63946] to-[#9d0208] text-white shadow-[0_0_12px_rgba(230,57,70,0.6)] border border-[#ff758f]'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Swords className="w-3.5 h-3.5 text-[#ff758f]" />
+                <span>Painel de Combate</span>
+              </button>
+
+              <button
+                onClick={() => setNPCModalTab('ficha')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-serif font-bold transition-all flex items-center gap-1.5 ${
+                  npcModalTab === 'ficha'
                     ? 'bg-[#9d4edd] text-white shadow-[0_0_10px_rgba(157,78,221,0.5)]'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                <Swords className="w-3.5 h-3.5" />
-                <span>Ficha T20 & Combate</span>
+                <FileText className="w-3.5 h-3.5" />
+                <span>Ficha T20 & Atributos</span>
               </button>
 
               <button
-                onClick={() => setActiveTab('taticas')}
+                onClick={() => setNPCModalTab('taticas')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-serif font-bold transition-all flex items-center gap-1.5 ${
-                  activeTab === 'taticas'
+                  npcModalTab === 'taticas'
                     ? 'bg-[#9d4edd] text-white shadow-[0_0_10px_rgba(157,78,221,0.5)]'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
                 <Crosshair className="w-3.5 h-3.5 text-amber-300" />
-                <span>Táticas do Mestre</span>
+                <span>Táticas</span>
               </button>
 
               <button
-                onClick={() => setActiveTab('roleplay')}
+                onClick={() => setNPCModalTab('roleplay')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-serif font-bold transition-all flex items-center gap-1.5 ${
-                  activeTab === 'roleplay'
+                  npcModalTab === 'roleplay'
                     ? 'bg-[#9d4edd] text-white shadow-[0_0_10px_rgba(157,78,221,0.5)]'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
                 <BookOpen className="w-3.5 h-3.5 text-cyan-300" />
-                <span>Interpretação & História</span>
+                <span>História</span>
               </button>
             </div>
           </div>
@@ -234,9 +334,15 @@ export const NPCModal: React.FC = () => {
         {/* CONTEÚDO SCROLLÁVEL DA FICHA */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 scrollbar-thin">
           
-          {/* ABA 1: FICHA T20 & COMBATE */}
-          {activeTab === 'ficha' && (
+          {/* ABA 0: PAINEL DE COMBATE INTERATIVO */}
+          {npcModalTab === 'combate' && (
+            <CreatureCombatPanel npc={currentNpc} />
+          )}
+
+          {/* ABA 1: FICHA T20 & ATRIBUTOS */}
+          {npcModalTab === 'ficha' && (
             <div className="space-y-4">
+
               
               {/* ESTATÍSTICAS PRINCIPAIS (PV, PM, DEFESA, RD, INICIATIVA) */}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
@@ -528,7 +634,7 @@ export const NPCModal: React.FC = () => {
           )}
 
           {/* ABA 2: TÁTICAS DO MESTRE */}
-          {activeTab === 'taticas' && (
+          {npcModalTab === 'taticas' && (
             <div className="space-y-4">
               <div className="bg-[#e0a96d]/10 border border-[#e0a96d]/40 rounded-2xl p-4 space-y-3 text-xs leading-relaxed text-[#f7e1c8]">
                 <div className="flex items-center gap-2 text-sm font-serif font-bold text-[#ffd166] uppercase tracking-wide">
@@ -569,7 +675,7 @@ export const NPCModal: React.FC = () => {
           )}
 
           {/* ABA 3: INTERPRETAÇÃO & HISTÓRIA */}
-          {activeTab === 'roleplay' && (
+          {npcModalTab === 'roleplay' && (
             <div className="space-y-4">
               {currentNpc.roleplay?.citacao && (
                 <div className="bg-[#0a0b10]/90 border-l-4 border-[#ffd166] rounded-r-2xl p-4 text-sm italic text-[#ffd166] shadow-lg">

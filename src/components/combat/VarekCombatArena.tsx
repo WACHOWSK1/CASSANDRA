@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAdventureStore } from '@/store/useAdventureStore';
+import { rollD20Test, parseAndRollDamageFormula } from '@/lib/diceEngine';
 import { 
   Zap, 
   ShieldAlert, 
@@ -78,55 +79,47 @@ export const VarekCombatArena: React.FC = () => {
       return;
     }
 
-    // Rola ataque com vantagem ou normal
-    const d1 = Math.floor(Math.random() * 20) + 1;
-    const d2 = concentracaoAtiva ? Math.floor(Math.random() * 20) + 1 : d1;
-    const bestDado = Math.max(d1, d2);
-    const bonusAtaque = 13; // Luta +13 (Int via Dançarino Marcial)
-    const totalAtaque = bestDado + bonusAtaque;
-    const isCrit = bestDado === 20;
+    // Rola ataque com vantagem se concentração estiver ativa
+    const atkResult = rollD20Test({ 
+      mod: 13, 
+      critMin: 20, 
+      advantage: concentracaoAtiva 
+    });
+    const isCrit = atkResult.isCrit;
 
-    // Rola Dano: Machado 2d8+3d6+7 + Toque Chocante 11d8+13
-    let danoMachado = 0;
-    const numDadosMachado = isCrit ? 6 : 2; // Crítico x3 no machado
-    for (let i = 0; i < numDadosMachado; i++) danoMachado += Math.floor(Math.random() * 8) + 1;
-    for (let i = 0; i < 3; i++) danoMachado += Math.floor(Math.random() * 6) + 1;
-    danoMachado += isCrit ? 21 : 7;
-
-    let danoChoque = 0;
-    for (let i = 0; i < 11; i++) danoChoque += Math.floor(Math.random() * 8) + 1;
-    danoChoque += 13;
-
-    const danoTotal = danoMachado + danoChoque;
+    // Rola Dano: Machado 2d8+3d6+7 (Crítico x3: 6d8+3d6+21) + Toque Chocante 11d8+13
+    const dmgMachado = parseAndRollDamageFormula(
+      isCrit ? "6d8+21 corte + 3d6 energia" : "2d8+7 corte + 3d6 energia"
+    );
+    const dmgChoque = parseAndRollDamageFormula("11d8+13 eletrico");
+    const danoTotal = dmgMachado.total + dmgChoque.total;
 
     handleModifyPM(-custoPM);
     setLastActionLog({
       titulo: isAtaqueDuplo 
         ? `⚡ Segundo Golpe de Ataque Arcano! (Gasto -12 PM)` 
         : `⚡ Golpe Devastador: Machado AM + Toque Chocante! (Gasto -${custoPM} PM)`,
-      detalhes: `Ataque: [${bestDado} no d20 + 13] = ${totalAtaque} ${concentracaoAtiva ? `(Vantagem: dados [${d1}, ${d2}])` : ''} ${isCrit ? '💥 CRÍTICO NO MACHADO (x3)!' : ''} | Dano Total: ${danoTotal} (Machado: ${danoMachado} corte + Choque: ${danoChoque} elétrico).`,
+      detalhes: `Ataque: [${atkResult.breakdown}] ${isCrit ? '💥 CRÍTICO NO MACHADO (x3)!' : ''} | Dano Total: ${danoTotal} (Machado: ${dmgMachado.total} [${dmgMachado.breakdown}] + Choque: ${dmgChoque.total} [${dmgChoque.breakdown}]).`,
       tipo: 'ataque'
     });
   };
 
   // 2. Contramágica Aprimorada (+21 Misticismo)
   const handleContramagica = () => {
-    const d20 = Math.floor(Math.random() * 20) + 1;
-    const total = d20 + 21;
+    const roll = rollD20Test({ mod: 21 });
     setLastActionLog({
       titulo: `🛡️ Contramágica Aprimorada Ativada! (Reação)`,
-      detalhes: `Varek faz teste de Misticismo: [${d20} + 21] = ${total} contra a CD da magia do jogador. Se igualar ou superar a CD, a magia é anulada instantaneamente!`,
+      detalhes: `Varek faz teste de Misticismo: [${roll.breakdown}] contra a CD da magia do jogador. Se igualar ou superar a CD, a magia é anulada instantaneamente!`,
       tipo: 'defesa'
     });
   };
 
   // 3. Aparar Magia & Rebater (Teste de Ataque +13 com Machado)
   const handleApararMagia = () => {
-    const d20 = Math.floor(Math.random() * 20) + 1;
-    const total = d20 + 13;
+    const roll = rollD20Test({ mod: 13 });
     setLastActionLog({
       titulo: `🪓 Aparar Magia & Rebater no Conjurador! (Reação)`,
-      detalhes: `Varek golpeia o feitiço em pleno ar com seu Machado: [${d20} + 13] = ${total} contra a CD da magia. Se superar a CD, Varek sofre ZERO dano e a magia é refletida de volta contra o conjurador original!`,
+      detalhes: `Varek golpeia o feitiço em pleno ar com seu Machado: [${roll.breakdown}] contra a CD da magia. Se superar a CD, Varek sofre ZERO dano e a magia é refletida de volta contra o conjurador original!`,
       tipo: 'defesa'
     });
   };
@@ -151,12 +144,10 @@ export const VarekCombatArena: React.FC = () => {
 
   // 5. Homem-Bomba: Runa de Proteção (Gatilho aos 0 PV)
   const handleRunaHomemBomba = () => {
-    let danoRuna = 0;
-    for (let i = 0; i < 11; i++) danoRuna += Math.floor(Math.random() * 8) + 1;
-    danoRuna += 13;
+    const dmgRuna = parseAndRollDamageFormula("11d8+13 eletrico");
     setLastActionLog({
       titulo: `💥 RUNA DE PROTEÇÃO DETONADA! ("HOMEM-BOMBA")`,
-      detalhes: `Varek cai a 0 PV ou inconsciente e a runa em seu peito descarrega! Todos em raio de 6m sofrem ${danoRuna} de dano elétrico (Reflexos CD 19 reduz à metade).`,
+      detalhes: `Varek cai a 0 PV ou inconsciente e a runa em seu peito descarrega! Todos em raio de 6m sofrem ${dmgRuna.total} (${dmgRuna.breakdown}) de dano elétrico (Reflexos CD 19 reduz à metade).`,
       tipo: 'alerta'
     });
   };

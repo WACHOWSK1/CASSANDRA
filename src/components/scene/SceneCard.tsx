@@ -3,11 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { useAdventureStore } from '@/store/useAdventureStore';
 import { useAudioStore } from '@/store/useAudioStore';
-import { ADVENTURE_NODES, ADVENTURE_ACTS } from '@/data/adventureData';
+import { ADVENTURE_NODES, ADVENTURE_ACTS, NPC_DATABASE } from '@/data/adventureData';
 import { ChallengeSimulator } from '@/components/challenge/ChallengeSimulator';
 import { BossArena } from '@/components/combat/BossArena';
 import { VarekCombatArena } from '@/components/combat/VarekCombatArena';
 import { FerrenCombatArena } from '@/components/combat/FerrenCombatArena';
+import { CreatureCombatPanel } from '@/components/combat/CreatureCombatPanel';
 import { 
   BookOpen, 
   Lightbulb, 
@@ -22,7 +23,16 @@ import {
 } from 'lucide-react';
 
 export const SceneCard: React.FC = () => {
-  const { getCurrentNode, chooseOption, jumpToNode, currentChallenge, actView, setActView } = useAdventureStore();
+  const { 
+    getCurrentNode, 
+    chooseOption, 
+    jumpToNode, 
+    currentChallenge, 
+    actView, 
+    setActView,
+    activeCombatNPCId,
+    closeActiveCombat
+  } = useAdventureStore();
   const { suggestedCategories, playFirstOfCategory, currentCategory, isPlaying, suggestAmbienceForNode } = useAudioStore();
   const [showNodeSelector, setShowNodeSelector] = useState(false);
 
@@ -155,18 +165,25 @@ export const SceneCard: React.FC = () => {
         <ChallengeSimulator config={node.challengeConfig} />
       )}
 
-      {/* Arena de Combate contra Boss */}
-      {node.id === "BOSS_SEVERIAN" && (
+      {/* Arena Ativa de Combate de Criatura (Acervo T20 / Aslavi / Cassandra) */}
+      {activeCombatNPCId && NPC_DATABASE[activeCombatNPCId] && (
+        activeCombatNPCId === 'ferren' ? (
+          <FerrenCombatArena />
+        ) : (
+          <CreatureCombatPanel npc={NPC_DATABASE[activeCombatNPCId]} />
+        )
+      )}
+
+      {/* Arenas Canônicas dos Bosses da Campanha (quando nenhuma criatura do acervo está sobreposta) */}
+      {!activeCombatNPCId && node.id === "BOSS_SEVERIAN" && (
         <BossArena />
       )}
 
-      {/* Arena de Combate contra Boss I (Varek) */}
-      {node.id === "VF" && (
+      {!activeCombatNPCId && node.id === "VF" && (
         <VarekCombatArena />
       )}
 
-      {/* Arena de Combate contra Boss III (Ferren Asloth - Escala S) */}
-      {(node.id === "F1_ESCALA_S" || node.id === "BOSS_FERREN") && (
+      {!activeCombatNPCId && (node.id === "F1_ESCALA_S" || node.id === "BOSS_FERREN") && (
         <FerrenCombatArena />
       )}
 

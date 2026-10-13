@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAdventureStore } from '@/store/useAdventureStore';
+import { rollD20Test, parseAndRollDamageFormula, rollDie } from '@/lib/diceEngine';
 import { 
   Skull, 
   Flame, 
@@ -98,45 +99,33 @@ export const FerrenCombatArena: React.FC = () => {
 
   // 1. Cajado da Destruição (+57 Ataque)
   const handleCajadoDestruicao = () => {
-    const d20 = Math.floor(Math.random() * 20) + 1;
-    const bonus = 57;
-    const totalAtaque = d20 + bonus;
-    const isCrit = d20 >= 19;
+    const atkResult = rollD20Test({ mod: 57, critMin: 19 });
+    const isCrit = atkResult.isCrit;
 
-    // Dano: 2d6+16 impacto + 10d6+10 frio (dobra no crítico)
-    let danoImpacto = 0;
-    const numDadosImp = isCrit ? 4 : 2;
-    for (let i = 0; i < numDadosImp; i++) danoImpacto += Math.floor(Math.random() * 6) + 1;
-    danoImpacto += isCrit ? 32 : 16;
-
-    let danoFrio = 0;
-    const numDadosFrio = isCrit ? 20 : 10;
-    for (let i = 0; i < numDadosFrio; i++) danoFrio += Math.floor(Math.random() * 6) + 1;
-    danoFrio += isCrit ? 20 : 10;
-
-    const totalDano = danoImpacto + danoFrio;
+    // Dano: 2d6+16 impacto + 10d6+10 frio (dobra dados no crítico)
+    const dmgResult = parseAndRollDamageFormula(
+      isCrit 
+        ? "4d6+32 impacto + 20d6+20 frio" 
+        : "2d6+16 impacto + 10d6+10 frio"
+    );
 
     setLastActionLog({
-      titulo: isCrit ? `💥 CRÍTICO! Golpe com Cajado da Destruição (D20: ${d20})` : `⚔️ Golpe com Cajado da Destruição (D20: ${d20})`,
-      detalhes: `Ataque: [${d20} + 57] = ${totalAtaque} contra a Defesa do herói! Dano: ${totalDano} (${danoImpacto} impacto + ${danoFrio} frio congelante). Especial: O herói atingido DEVE passar em teste de Fortitude CD 55 ou fica totalmente PARALISADO por 1d6 rodadas!`,
+      titulo: isCrit ? `💥 CRÍTICO! Golpe com Cajado da Destruição (D20: ${atkResult.naturalRoll})` : `⚔️ Golpe com Cajado da Destruição (D20: ${atkResult.naturalRoll})`,
+      detalhes: `Ataque: [${atkResult.breakdown}] contra a Defesa do herói! Dano: ${dmgResult.total} (${dmgResult.breakdown}). Especial: O herói atingido DEVE passar em teste de Fortitude CD 55 ou fica totalmente PARALISADO por 1d6 rodadas!`,
       tipo: 'ataque'
     });
   };
 
   // 2. Toque Gélido (+55 Ataque)
   const handleToqueGelido = () => {
-    const d20 = Math.floor(Math.random() * 20) + 1;
-    const totalAtaque = d20 + 55;
-    const isCrit = d20 === 20;
-
-    let danoFrio = 0;
-    const numDados = isCrit ? 20 : 10;
-    for (let i = 0; i < numDados; i++) danoFrio += Math.floor(Math.random() * 6) + 1;
-    danoFrio += isCrit ? 20 : 10;
+    const atkResult = rollD20Test({ mod: 55, critMin: 20 });
+    const dmgResult = parseAndRollDamageFormula(
+      atkResult.isCrit ? "20d6+20 frio" : "10d6+10 frio"
+    );
 
     setLastActionLog({
-      titulo: `❄️ Toque Gélido de Ferren (D20: ${d20})`,
-      detalhes: `Ataque de Toque: [${d20} + 55] = ${totalAtaque}! Causa ${danoFrio} pontos de dano de frio direto. O herói atingido deve fazer Fortitude CD 55 para não ficar paralisado por 1d6 rodadas!`,
+      titulo: `❄️ Toque Gélido de Ferren (D20: ${atkResult.naturalRoll}) ${atkResult.isCrit ? '★ CRÍTICO!' : ''}`,
+      detalhes: `Ataque de Toque: [${atkResult.breakdown}]! Dano: ${dmgResult.total} (${dmgResult.breakdown}). O herói atingido deve fazer Fortitude CD 55 para não ficar paralisado por 1d6 rodadas!`,
       tipo: 'ataque'
     });
   };
@@ -154,20 +143,14 @@ export const FerrenCombatArena: React.FC = () => {
     }
     handleModifyPM(-custo);
 
-    const d20 = Math.floor(Math.random() * 20) + 1;
-    const totalAtaque = d20 + 55;
-
-    // 36d6+51 de trevas
-    let danoTrevas = 0;
-    for (let i = 0; i < 36; i++) danoTrevas += Math.floor(Math.random() * 6) + 1;
-    danoTrevas += 51;
-
-    const curaFerren = Math.floor(danoTrevas / 2);
+    const atkResult = rollD20Test({ mod: 55, critMin: 20 });
+    const dmgResult = parseAndRollDamageFormula("36d6+51 trevas");
+    const curaFerren = Math.floor(dmgResult.total / 2);
     handleModifyPV(curaFerren);
 
     setLastActionLog({
       titulo: `🩸 TOQUE VAMPÍRICO CONSUMADO! (-${custo} PM)`,
-      detalhes: `Ataque: [${d20} + 55] = ${totalAtaque}! Ferren encosta sua mão descarnada no peito da vítima, drenando sua vitalidade em pó. Dano: ${danoTrevas} pontos de dano de trevas! Ferren recupera +${curaFerren} PV imediatamente!`,
+      detalhes: `Ataque: [${atkResult.breakdown}]! Ferren encosta sua mão descarnada no peito da vítima, drenando sua vitalidade em pó. Dano: ${dmgResult.total} (${dmgResult.breakdown})! Ferren recupera +${curaFerren} PV imediatamente!`,
       tipo: 'cura'
     });
   };
@@ -185,14 +168,11 @@ export const FerrenCombatArena: React.FC = () => {
     }
     handleModifyPM(-custo);
 
-    // 14d8+29 de fogo
-    let danoFogo = 0;
-    for (let i = 0; i < 14; i++) danoFogo += Math.floor(Math.random() * 8) + 1;
-    danoFogo += 29;
+    const dmgResult = parseAndRollDamageFormula("14d8+29 fogo");
 
     setLastActionLog({
       titulo: `🔥 MAGIA: FERVER SANGUE! (-${custo} PM - Sustentada)`,
-      detalhes: `Ferren aponta o dedo e o sangue de todos os alvos em alcance curto começa a ferver nas veias! Cada criatura sofre ${danoFogo} de fogo e fica enjoada (Fortitude CD 57 reduz à metade e evita condição). Se um herói for reduzido a 0 PV por este efeito, seu corpo EXPLODE em chamas causando 6d6+21 de dano de fogo a todos em 3m!`,
+      detalhes: `Ferren aponta o dedo e o sangue de todos os alvos em alcance curto começa a ferver nas veias! Cada criatura sofre ${dmgResult.total} de fogo (${dmgResult.breakdown}) e fica enjoada (Fortitude CD 57 reduz à metade e evita condição). Se um herói for reduzido a 0 PV por este efeito, seu corpo EXPLODE em chamas causando 6d6+21 de dano de fogo a todos em 3m!`,
       tipo: 'magia'
     });
   };
@@ -210,14 +190,11 @@ export const FerrenCombatArena: React.FC = () => {
     }
     handleModifyPM(-custo);
 
-    // 10d8+35 de trevas
-    let danoTrevas = 0;
-    for (let i = 0; i < 10; i++) danoTrevas += Math.floor(Math.random() * 8) + 1;
-    danoTrevas += 35;
+    const dmgResult = parseAndRollDamageFormula("10d8+35 trevas");
 
     setLastActionLog({
       titulo: `💀 MAGIA: TOQUE DA MORTE! (-${custo} PM)`,
-      detalhes: `O ar apodrece com um pulso de necromancia absoluta. Todas as criaturas em alcance curto sofrem ${danoTrevas} pontos de dano de trevas. Se algum herói tiver menos da metade de seus PV totais, deve fazer Fortitude CD 57: se passar sofre o dano normal; se falhar, SEUS PV SÃO REDUZIDOS A –10 INSTANTANEAMENTE (Morte Iminente)!`,
+      detalhes: `O ar apodrece com um pulso de necromancia absoluta. Todas as criaturas em alcance curto sofrem ${dmgResult.total} pontos de dano de trevas (${dmgResult.breakdown}). Se algum herói tiver menos da metade de seus PV totais, deve fazer Fortitude CD 57: se passar sofre o dano normal; se falhar, SEUS PV SÃO REDUZIDOS A –10 INSTANTANEAMENTE (Morte Iminente)!`,
       tipo: 'magia'
     });
   };
@@ -235,7 +212,7 @@ export const FerrenCombatArena: React.FC = () => {
     }
     handleModifyPM(-custo);
 
-    const servo = servoEscolhido || SERVOS_DISPONIVEIS[Math.floor(Math.random() * SERVOS_DISPONIVEIS.length)];
+    const servo = servoEscolhido || SERVOS_DISPONIVEIS[rollDie(SERVOS_DISPONIVEIS.length) - 1];
     setServoAtivo(servo);
 
     setLastActionLog({
@@ -267,12 +244,11 @@ export const FerrenCombatArena: React.FC = () => {
 
   // 8. Presença Opressora (Reação contra Atacante)
   const handlePresencaOpressora = () => {
-    let danoPsiquico = 0;
-    for (let i = 0; i < 12; i++) danoPsiquico += Math.floor(Math.random() * 6) + 1;
+    const dmgResult = parseAndRollDamageFormula("12d6 psiquico");
 
     setLastActionLog({
       titulo: `👁️ REAÇÃO: PRESENÇA OPRESSORA! (CD 55)`,
-      detalhes: `Qualquer herói que ousa desferir um ataque contra Ferren deve fazer um teste de Vontade CD 55! Se falhar, seu corpo treme em desespero cósmico: o ataque é anulado, a ação é perdida e o herói sofre ${danoPsiquico} pontos de dano psíquico (12d6)! Se passar, não é mais afetado até o fim da cena.`,
+      detalhes: `Qualquer herói que ousa desferir um ataque contra Ferren deve fazer um teste de Vontade CD 55! Se falhar, seu corpo treme em desespero cósmico: o ataque é anulado, a ação é perdida e o herói sofre ${dmgResult.total} pontos de dano psíquico (${dmgResult.breakdown})! Se passar, não é mais afetado até o fim da cena.`,
       tipo: 'defesa'
     });
   };
@@ -290,15 +266,11 @@ export const FerrenCombatArena: React.FC = () => {
     }
     handleModifyPM(-custo);
 
-    const d1 = Math.floor(Math.random() * 20) + 1;
-    const d2 = Math.floor(Math.random() * 20) + 1;
-    const bestD20 = Math.max(d1, d2);
-    const misticismo = 36;
-    const totalContramagica = bestD20 + misticismo;
+    const rollResult = rollD20Test({ mod: 36, advantage: true });
 
     setLastActionLog({
       titulo: `✨ CONTRAMÁGICA SUPERIOR! (-3 PM)`,
-      detalhes: `Ferren reage com Contramágica Superior rolando 2 dados: [D20: ${d1}, ${d2} -> Maior ${bestD20}] + ${misticismo} = ${totalContramagica}! Qualquer feitiço lançado por conjurador com CD igual ou menor a ${totalContramagica} é DISSIPADO instantaneamente no ar!`,
+      detalhes: `Ferren reage com Contramágica Superior: [${rollResult.breakdown}]. Qualquer feitiço lançado por conjurador com CD igual ou menor a ${rollResult.total} é DISSIPADO instantaneamente no ar!`,
       tipo: 'defesa'
     });
   };
@@ -345,13 +317,11 @@ export const FerrenCombatArena: React.FC = () => {
     }
     handleModifyPM(-custo);
 
-    let dano = 0;
-    for (let i = 0; i < 8; i++) dano += Math.floor(Math.random() * 6) + 1;
-    dano += 8 + 15; // +15 na primeira
+    const dmgResult = parseAndRollDamageFormula("8d6+23 trevas");
 
     setLastActionLog({
       titulo: `🐙 MAGIA: TENTÁCULOS DE TREVAS! (-${custo} PM)`,
-      detalhes: `Tentáculos pretos como piche irrompem em uma esfera de 6m. Ferren faz teste de manobra Agarrar com Misticismo +36 contra cada herói na área. Alvos agarrados são esmagados sofrendo ${dano} de trevas! A área conta como terreno difícil e os tentáculos são imunes a dano.`,
+      detalhes: `Tentáculos pretos como piche irrompem em uma esfera de 6m. Ferren faz teste de manobra Agarrar com Misticismo +36 contra cada herói na área. Alvos agarrados são esmagados sofrendo ${dmgResult.total} de trevas (${dmgResult.breakdown})! A área conta como terreno difícil e os tentáculos são imunes a dano.`,
       tipo: 'magia'
     });
   };

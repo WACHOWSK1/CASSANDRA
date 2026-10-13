@@ -190,7 +190,28 @@ export interface NPCStats {
     ganchos?: string[];
     notasMestre?: string;
   };
+  aventura?: string;
   [key: string]: any;
+}
+
+export interface CreatureCombatLogEntry {
+  id: string;
+  time: string;
+  text: string;
+  type: 'ataque' | 'dano' | 'magia' | 'cura' | 'condicao' | 'info';
+}
+
+export interface CreatureCombatState {
+  currentPV: number;
+  maxPV: number;
+  currentPM: number;
+  maxPM: number;
+  tempPV: number;
+  condicoes: string[];
+  defesaMod: number;
+  rdMod: number;
+  round: number;
+  combatLog: CreatureCombatLogEntry[];
 }
 
 export interface HistoryStep {
