@@ -18,6 +18,33 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var testKey = '__test_storage__';
+                window.localStorage.setItem(testKey, testKey);
+                window.localStorage.removeItem(testKey);
+              } catch (e) {
+                var mem = {};
+                try {
+                  Object.defineProperty(window, 'localStorage', {
+                    value: {
+                      getItem: function(k) { return mem[k] || null; },
+                      setItem: function(k, v) { mem[k] = String(v); },
+                      removeItem: function(k) { delete mem[k]; },
+                      clear: function() { mem = {}; },
+                      get length() { return Object.keys(mem).length; },
+                      key: function(i) { return Object.keys(mem)[i] || null; }
+                    },
+                    configurable: true,
+                    writable: true
+                  });
+                } catch (_) {}
+              }
+            `,
+          }}
+        />
       </head>
       <body className="antialiased select-none">
         <QueryProvider>

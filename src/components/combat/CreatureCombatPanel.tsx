@@ -72,6 +72,24 @@ export const CreatureCombatPanel: React.FC<CreatureCombatPanelProps> = ({ npc })
     tipo: 'ataque' | 'magia' | 'defesa' | 'cura' | 'alerta' | 'condicao';
   } | null>(null);
 
+  // Condição atualmente selecionada/inspecionada para exibição de regras e efeitos
+  const [inspectedCondition, setInspectedCondition] = useState<{
+    name: string;
+    icon: string;
+    desc: string;
+    actionLabel?: string;
+    onAction?: () => void;
+  } | null>(null);
+
+  // Extrair fórmula de dados de magias (ex: 8d6+8, 6d8+12, 10d10, 4d6+4, 12d6)
+  const extractSpellDiceFormula = (sp: NPCMagia): string | null => {
+    if (sp.dano && typeof sp.dano === 'string' && sp.dano.trim().length > 0) {
+      return sp.dano.trim();
+    }
+    const match = (sp.desc || '').match(/\b(\d+d\d+(?:\s*[+-]\s*\d+)?)\b/i);
+    return match ? match[1] : null;
+  };
+
   const baseDefesa = parseInt(String(npc.combatStats?.defesa)) || 20;
   const copiesDefBonus = (npc.id === 'ra_assassina' && combat.condicoes.includes('Imagens Espelhadas')) ? mirroredCopies * 2 : 0;
   const fallenDefPenalty = combat.condicoes.includes('Caído') ? -5 : 0;
@@ -158,7 +176,7 @@ export const CreatureCombatPanel: React.FC<CreatureCombatPanelProps> = ({ npc })
     });
   };
 
-  // Executar Magia
+  // Executar Magia com Rolagem Automática de Dados (CSPRNG) & Efeitos T20
   const handleCastSpell = (sp: NPCMagia) => {
     const rawCost = typeof sp.custoPM === 'number' ? sp.custoPM : parseInt(String(sp.custoPM)) || 0;
     if (combat.currentPM < rawCost) {
@@ -172,36 +190,72 @@ export const CreatureCombatPanel: React.FC<CreatureCombatPanelProps> = ({ npc })
 
     modifyCreaturePM(npc.id, -rawCost);
 
-    let extraEffect = '';
     let logType: 'magia' | 'cura' = 'magia';
+    let extraEffect = '';
+    let diceRollSummary = '';
+    let rolledTotal: number | null = null;
 
-    if (sp.nome.toLowerCase().includes('bola de fogo')) {
-      const dmg = parseAndRollDamageFormula('12d6');
-      extraEffect = ` | Dano em Área: ${dmg.total} de Fogo (${dmg.breakdown}) (Reflexos CD ${sp.cd || 25} reduz à metade)`;
-    } else if (sp.nome.toLowerCase().includes('crânio voador')) {
-      const dmg = parseAndRollDamageFormula('7d8+7');
-      extraEffect = ` | Dano nos 3 Alvos: ${dmg.total} de Necrose (${dmg.breakdown}) (Reflexos CD ${sp.cd || 25} reduz à metade)`;
-    } else if (sp.nome.toLowerCase().includes('toque vampírico')) {
-      const dmg = parseAndRollDamageFormula('12d6');
-      const cura = Math.floor(dmg.total / 2);
-      extraEffect = ` | Dano de Trevas com Florete: ${dmg.total} PV! ${npc.name} recupera +${cura} PV imediatamente!`;
-      modifyCreaturePV(npc.id, cura);
-      logType = 'cura';
-    } else if (sp.nome.toLowerCase().includes('imagem espelhada')) {
+    const lowerName = sp.nome.toLowerCase();
+    const lowerDesc = (sp.desc || '').toLowerCase();
+    const isCura = lowerName.includes('cura') || lowerDesc.includes('cura') || lowerDesc.includes('recupera');
+
+    // 1. Efeitos de condições especiais da magia
+    if (lowerName.includes('imagem espelhada') || lowerDesc.includes('cópias ilusórias')) {
       if (!combat.condicoes.includes('Imagens Espelhadas')) {
         toggleCreatureCondicao(npc.id, 'Imagens Espelhadas');
       }
       setMirroredCopies(6);
-      extraEffect = ` | +12 na Defesa ativado com 6 cópias ilusórias!`;
-    } else if (sp.nome.toLowerCase().includes('velocidade')) {
+      extraEffect += ' | +12 na Defesa ativado com 6 cópias ilusórias!';
+    } else if (lowerName.includes('velocidade') || lowerDesc.includes('+1 ação padrão')) {
       if (!combat.condicoes.includes('Velocidade')) {
         toggleCreatureCondicao(npc.id, 'Velocidade');
       }
-      extraEffect = ` | +1 Ação Padrão por turno ativada!`;
+      extraEffect += ' | +1 Ação Padrão por rodada ativada!';
     }
 
-    const actionTitle = `✨ Conjurou: ${sp.nome} (-${rawCost} PM)`;
-    const actionDetails = `${sp.desc}${sp.cd ? ` [CD ${sp.cd}]` : ''}${extraEffect}`;
+    // 2. Extração e rolagem automática de dados com gerador CSPRNG sem viés
+    const formula = extractSpellDiceFormula(sp);
+
+    if (formula) {
+      const dmgResult = parseAndRollDamageFormula(formula);
+      rolledTotal = dmgResult.total;
+
+      // Efeito vampírico / dreno
+      if (lowerName.includes('toque vampírico') || (lowerDesc.includes('recupera') && lowerDesc.includes('metade'))) {
+        const cura = Math.floor(dmgResult.total / 2);
+        modifyCreaturePV(npc.id, cura);
+        extraEffect += ` | Drenagem de Vitalidade: ${npc.name} recupera +${cura} PV imediatamente!`;
+        logType = 'cura';
+      } else if (isCura) {
+        modifyCreaturePV(npc.id, dmgResult.total);
+        extraEffect += ` | Restauração Vital: +${dmgResult.total} PV curados em ${npc.name}!`;
+        logType = 'cura';
+      }
+
+      // Identificar salvaguarda e cálculo de redução à metade
+      const reducesHalf = lowerDesc.includes('metade');
+      const halfDmg = Math.floor(dmgResult.total / 2);
+      const saveTypeMatch = sp.desc.match(/(Reflexos|Fortitude|Vontade)\s+CD\s*\d+/i);
+      const saveText = saveTypeMatch ? saveTypeMatch[0] : (sp.cd ? `Salvaguarda CD ${sp.cd}` : '');
+
+      const halfNote = reducesHalf 
+        ? ` (${halfDmg} de dano se passar em ${saveText || 'teste de resistência'})` 
+        : '';
+
+      diceRollSummary = `🎲 Rolagem Automática [${formula}]: ${dmgResult.total} (${dmgResult.breakdown})${halfNote}`;
+    }
+
+    const cdTag = sp.cd && !sp.desc.includes(`CD ${sp.cd}`) ? ` [CD ${sp.cd}]` : '';
+
+    const actionTitle = rolledTotal !== null
+      ? (logType === 'cura'
+          ? `✨ ${sp.nome} (-${rawCost} PM) ➔ +${rolledTotal} PV!`
+          : `✨ ${sp.nome} (-${rawCost} PM) ➔ ${rolledTotal} de Dano!`)
+      : `✨ Conjurou: ${sp.nome} (-${rawCost} PM)`;
+
+    const actionDetails = diceRollSummary 
+      ? `${diceRollSummary} | ${sp.desc}${cdTag}${extraEffect}`
+      : `${sp.desc}${cdTag}${extraEffect}`;
 
     setLastActionLog({
       titulo: actionTitle,
@@ -646,19 +700,124 @@ export const CreatureCombatPanel: React.FC<CreatureCombatPanelProps> = ({ npc })
     }
   };
 
-  // Condições comuns para alternar rapidamente
+  // Condições comuns de combate com regras oficiais de Tormenta20 e descrições detalhadas
   const conditionList = [
-    { name: 'Sangrando', icon: '🩸', desc: 'Perda contínua de PV por rodada' },
-    { name: 'Atordoado', icon: '💫', desc: 'Não pode fazer ações e fica desprevenido (-5 Defesa)' },
-    { name: 'Fatigado', icon: '😫', desc: '–2 em Força e Destreza, deslocamento reduzido' },
-    { name: 'Abalado', icon: '😨', desc: '–2 em todos os testes de perícia' },
-    { name: 'Caído', icon: '🦿', desc: '–5 na Defesa contra ataques corpo a corpo' },
-    { name: 'Camuflagem', icon: '🌫️', desc: '20% de chance de falha contra ataques recebidos' },
-    { name: 'Velocidade', icon: '⚡', desc: '+1 ação padrão por rodada' },
-    { name: 'Imagens Espelhadas', icon: '🪞', desc: '+2 Defesa por cópia ativa' },
-    { name: 'Envenenado', icon: '🐍', desc: 'Sofrendo dano ou efeitos de peçonha' },
-    { name: 'Distraído (Ouro)', icon: '🪙', desc: 'Atordoado devorando moedas (Papa-Dim)' }
+    { 
+      name: 'Sangrando', 
+      icon: '🩸', 
+      desc: 'No início de seu turno, a criatura deve fazer um teste de Constituição (CD 15) ou perde 1d6 (ou 2d6) pontos de vida. A condição é removida com sucesso no teste, com primeiros socorros (Cura CD 15) ou qualquer cura mágica.',
+      actionLabel: 'Aplicar 2d6 Sangramento',
+      onAction: () => {
+        const tick = parseAndRollDamageFormula('2d6');
+        modifyCreaturePV(npc.id, -tick.total);
+        setLastActionLog({
+          titulo: `🩸 Sangramento Aplicado: -${tick.total} PV`,
+          detalhes: `A ferida aberta sangrou causando ${tick.total} de dano (${tick.breakdown}).`,
+          tipo: 'cura'
+        });
+      }
+    },
+    { 
+      name: 'Atordoado', 
+      icon: '💫', 
+      desc: 'A criatura fica indefesa: não pode realizar nenhuma ação (nem reações) e sofre –5 na Defesa. Todos os ataques corpo a corpo contra ela recebem +2 no teste de ataque.' 
+    },
+    { 
+      name: 'Fatigado', 
+      icon: '😫', 
+      desc: 'A criatura sofre –2 em Força e Destreza, não pode correr nem fazer investidas, e seu deslocamento é reduzido em 3m. Se sofrer fadiga novamente, avança para a condição Exausto.' 
+    },
+    { 
+      name: 'Abalado', 
+      icon: '😨', 
+      desc: 'Abalada por medo ou pressão psicológica: sofre –2 em todos os testes de perícia (incluindo testes de ataque e salvaguardas de Fortitude, Reflexos e Vontade).' 
+    },
+    { 
+      name: 'Caído', 
+      icon: '🦿', 
+      desc: 'No chão: sofre –5 na Defesa contra ataques corpo a corpo (mas recebe +5 na Defesa contra ataques à distância). Deslocamento reduzido a 1,5m rastejando. Levantar-se custa uma ação de movimento.',
+      actionLabel: 'Levantar-se (Gasta Movimento)',
+      onAction: () => {
+        toggleCreatureCondicao(npc.id, 'Caído');
+        setLastActionLog({
+          titulo: `🦿 ${npc.name} Levantou-se!`,
+          detalhes: 'Gastou uma ação de movimento para se reerguer do solo. Penalidade de –5 na Defesa contra corpo a corpo anulada.',
+          tipo: 'defesa'
+        });
+      }
+    },
+    { 
+      name: 'Camuflagem', 
+      icon: '🌫️', 
+      desc: 'Oculta por sombras, bruma ou folhagem: qualquer ataque direcionado a esta criatura tem 20% de chance de falha automática (ou 50% para camuflagem total). Rolar d% antes de aplicar o dano.',
+      actionLabel: 'Testar Camuflagem (20%)',
+      onAction: () => {
+        const pct = rollPercentCheck(20, 'Camuflagem');
+        setLastActionLog({
+          titulo: `🌫️ Teste de Camuflagem (${pct.success ? 'Ataque Errou no Vazio!' : 'Acerto Normal'})`,
+          detalhes: pct.breakdown,
+          tipo: 'defesa'
+        });
+      }
+    },
+    { 
+      name: 'Velocidade', 
+      icon: '⚡', 
+      desc: 'Sob efeito de aceleração temporal mágica: recebe +1 ação padrão adicional por rodada, +3m de deslocamento e +2 na Defesa e salvaguardas de Reflexos.' 
+    },
+    { 
+      name: 'Imagens Espelhadas', 
+      icon: '🪞', 
+      desc: 'Rodeada por cópias ilusórias idênticas: concede +2 de bônus na Defesa para cada cópia ativa (máximo +12 com 6 cópias). Qualquer ataque que errar a criatura por até o valor do bônus destrói 1 cópia.',
+      actionLabel: 'Destruir 1 Cópia (-1)',
+      onAction: () => {
+        if (mirroredCopies > 0) {
+          const next = mirroredCopies - 1;
+          setMirroredCopies(next);
+          setLastActionLog({
+            titulo: `🪞 Cópia Ilusória Destruída! (${next} restantes)`,
+            detalhes: `O golpe atingiu uma ilusão perfeita! A cópia se desfez. Defesa bônus atual: +${next * 2}.`,
+            tipo: 'defesa'
+          });
+        }
+      }
+    },
+    { 
+      name: 'Envenenado', 
+      icon: '🐍', 
+      desc: 'Toxina ou peçonha na corrente sanguínea: sofre dano contínuo de veneno no início de cada rodada e/ou penalidades severas em atributos até ser curado ou resistir com teste de Fortitude.' 
+    },
+    { 
+      name: 'Distraído (Ouro)', 
+      icon: '🪙', 
+      desc: 'Condição Especial (Enxame Papa-Dim): O enxame para qualquer ataque e gasta todo o seu turno devorando e derretendo moedas de ouro (50+ T$) atiradas pelos aventureiros.' 
+    },
+    {
+      name: 'Desprevenido',
+      icon: '🎯',
+      desc: 'Pego de surpresa ou sem apoio: sofre –5 na Defesa e –5 em Reflexos, e não pode realizar reações de esquiva até seu próximo turno.'
+    },
+    {
+      name: 'Imóvel',
+      icon: '⛓️',
+      desc: 'Preso por grilhões, paralisia ou raízes: não pode se deslocar pelo terreno. Sofre –2 na Defesa e –5 em testes de Reflexos.'
+    }
   ];
+
+  // Alternar condição e inspecionar sua descrição detalhada
+  const handleToggleCondition = (cond: typeof conditionList[0]) => {
+    toggleCreatureCondicao(npc.id, cond.name);
+    setInspectedCondition(cond);
+
+    const willBeActive = !combat.condicoes.includes(cond.name);
+    setLastActionLog({
+      titulo: willBeActive 
+        ? `⚡ Condição Ativada: ${cond.icon} ${cond.name}` 
+        : `❌ Condição Removida: ${cond.icon} ${cond.name}`,
+      detalhes: `Efeito Tormenta20: ${cond.desc}`,
+      tipo: 'condicao'
+    });
+  };
 
   return (
     <div className="bg-gradient-to-b from-[#140f24] via-[#0d0918] to-[#140f24] border-2 border-[#9d4edd]/50 rounded-2xl p-4 sm:p-5 shadow-[0_0_30px_rgba(157,78,221,0.3)] space-y-4 my-4 relative overflow-hidden text-xs">
@@ -1034,50 +1193,65 @@ export const CreatureCombatPanel: React.FC<CreatureCombatPanelProps> = ({ npc })
         </div>
       )}
 
-      {/* MAGIAS & PODERES DE CONJURAÇÃO (SE HOUVER) */}
+      {/* MAGIAS & PODERES DE CONJURAÇÃO (ROLAGEM AUTOMÁTICA DE DADOS) */}
       {npc.combatStats?.magias && npc.combatStats.magias.length > 0 && (
         <div className="bg-[#181226]/80 border border-[#2ec4b6]/30 rounded-xl p-3.5 space-y-3">
           <div className="flex items-center justify-between text-xs font-serif font-bold text-[#48cae4] uppercase tracking-wider">
             <div className="flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-[#2ec4b6]" />
-              <span>Magias Preparadas & Conjurações Arcanas:</span>
+              <span>Magias Preparadas & Conjurações Arcanas (Clique para Rolar Dados):</span>
             </div>
-            <span className="text-[10px] text-gray-400 font-sans font-normal lowercase">dedução automática de PM</span>
+            <span className="text-[10px] text-gray-400 font-sans font-normal lowercase">rolagem e dedução automáticas</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-            {npc.combatStats.magias.map((sp, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleCastSpell(sp)}
-                className="p-3 rounded-xl bg-[#141f2d] hover:bg-[#1a2b3f] border border-[#2ec4b6]/30 hover:border-[#2ec4b6] text-left transition-all hover:scale-[1.01] group space-y-1 shadow"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs text-white group-hover:text-cyan-300">{sp.nome}</span>
-                  <span className="text-[10px] font-mono font-bold text-cyan-300">
-                    {sp.custoPM} PM {sp.cd ? `• CD ${sp.cd}` : ''}
-                  </span>
-                </div>
-                <p className="text-[10px] text-gray-300 leading-snug line-clamp-2">
-                  {sp.desc}
-                </p>
-                <div className="pt-1 flex items-center justify-end text-[10px] font-mono text-cyan-300 group-hover:translate-x-0.5 transition-transform">
-                  <span>Conjurar Feitiço ➔</span>
-                </div>
-              </button>
-            ))}
+            {npc.combatStats.magias.map((sp, idx) => {
+              const diceFormula = extractSpellDiceFormula(sp);
+              return (
+                <button
+                  key={idx}
+                  onClick={() => handleCastSpell(sp)}
+                  className="p-3 rounded-xl bg-[#141f2d] hover:bg-[#1a2b3f] border border-[#2ec4b6]/30 hover:border-[#2ec4b6] text-left transition-all hover:scale-[1.01] group space-y-1.5 shadow"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-white group-hover:text-cyan-300">{sp.nome}</span>
+                    <span className="text-[10px] font-mono font-bold text-cyan-300">
+                      {sp.custoPM} PM {sp.cd ? `• CD ${sp.cd}` : ''}
+                    </span>
+                  </div>
+                  {diceFormula && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/40 text-[10px] font-mono font-bold text-cyan-300">
+                        🎲 {diceFormula}
+                      </span>
+                      {sp.escola && (
+                        <span className="text-[10px] text-purple-300 truncate font-serif">
+                          {sp.escola}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  <p className="text-[10px] text-gray-300 leading-snug line-clamp-2">
+                    {sp.desc}
+                  </p>
+                  <div className="pt-1 flex items-center justify-end text-[10px] font-mono text-cyan-300 group-hover:translate-x-0.5 transition-transform">
+                    <span>Conjurar com Dados ➔</span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
 
       {/* CONDIÇÕES E STATUS DE COMBATE T20 */}
-      <div className="bg-[#181226]/80 border border-[#ffd166]/20 rounded-xl p-3 space-y-2">
+      <div className="bg-[#181226]/80 border border-[#ffd166]/20 rounded-xl p-3 space-y-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 font-bold text-[#ffd166] uppercase text-xs font-serif">
             <Flame className="w-3.5 h-3.5 text-amber-300" />
-            <span>Condições & Efeitos Ativos (Clique para Alternar):</span>
+            <span>Condições & Efeitos Ativos (Clique para Alternar e Ver Efeito):</span>
           </div>
-          <span className="text-[10px] text-gray-400">
+          <span className="text-[10px] text-gray-400 font-mono">
             {combat.condicoes.length} ativa(s)
           </span>
         </div>
@@ -1085,26 +1259,74 @@ export const CreatureCombatPanel: React.FC<CreatureCombatPanelProps> = ({ npc })
         <div className="flex flex-wrap gap-1.5">
           {conditionList.map((cond) => {
             const isActive = combat.condicoes.includes(cond.name);
+            const isInspected = inspectedCondition?.name === cond.name;
             return (
               <button
                 key={cond.name}
-                onClick={() => toggleCreatureCondicao(npc.id, cond.name)}
-                className={`px-2 py-0.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-all border ${
+                onClick={() => handleToggleCondition(cond)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all border ${
                   isActive
-                    ? 'bg-[#e63946] text-white border-[#ff758f] shadow-[0_0_10px_rgba(230,57,70,0.4)]'
-                    : 'bg-[#0a0b10]/70 text-gray-300 border-white/5 hover:border-white/20 hover:text-white'
-                }`}
+                    ? 'bg-[#e63946] text-white border-[#ff758f] shadow-[0_0_12px_rgba(230,57,70,0.5)] font-bold'
+                    : 'bg-[#0a0b10]/70 text-gray-300 border-white/5 hover:border-purple-500/40 hover:text-white'
+                } ${isInspected ? 'ring-2 ring-[#ffd166]' : ''}`}
                 title={cond.desc}
               >
                 <span>{cond.icon}</span>
                 <span>{cond.name}</span>
+                {isActive && <span className="w-1.5 h-1.5 rounded-full bg-white ml-0.5 animate-pulse" />}
               </button>
             );
           })}
         </div>
 
-        {/* Gatilho Rápido para Sangramento */}
-        {combat.condicoes.includes('Sangrando') && (
+        {/* PAINEL DE INSPEÇÃO DA CONDIÇÃO CLICADA (DESCREVE O EFEITO) */}
+        {inspectedCondition && (
+          <div className="bg-[#100b1e]/90 border border-[#ffd166]/40 rounded-xl p-3 space-y-2 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xl p-1 bg-white/5 rounded-lg border border-white/10">{inspectedCondition.icon}</span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-serif font-bold text-sm text-[#ffd166]">{inspectedCondition.name}</h4>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
+                      combat.condicoes.includes(inspectedCondition.name)
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                        : 'bg-white/5 text-gray-400 border border-white/10'
+                    }`}>
+                      {combat.condicoes.includes(inspectedCondition.name) ? '● Ativa na Criatura' : '○ Inativa'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-purple-300 font-mono">Regra Oficial Tormenta20</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setInspectedCondition(null)}
+                className="p-1 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                title="Fechar descrição"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-200 leading-relaxed bg-[#07050d] p-2.5 rounded-lg border border-purple-500/20">
+              {inspectedCondition.desc}
+            </p>
+
+            {inspectedCondition.actionLabel && inspectedCondition.onAction && (
+              <div className="flex justify-end pt-1">
+                <button
+                  onClick={inspectedCondition.onAction}
+                  className="px-3 py-1 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow transition-all hover:scale-[1.02] flex items-center gap-1.5"
+                >
+                  <span>{inspectedCondition.actionLabel}</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Gatilho Rápido para Sangramento se não inspecionado */}
+        {combat.condicoes.includes('Sangrando') && inspectedCondition?.name !== 'Sangrando' && (
           <div className="bg-[#e63946]/10 border border-[#e63946]/30 rounded-lg p-2 flex items-center justify-between text-xs text-[#ff758f] mt-1">
             <div className="flex items-center gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5 text-[#e63946]" />
@@ -1148,35 +1370,6 @@ export const CreatureCombatPanel: React.FC<CreatureCombatPanelProps> = ({ npc })
           <p className="text-xs leading-relaxed opacity-90">{lastActionLog.detalhes}</p>
         </div>
       )}
-
-      {/* DIÁRIO DE COMBATE / HISTÓRICO EM TEMPO REAL */}
-      <div className="bg-[#0c0e17] border border-white/10 rounded-xl p-3 space-y-2 shadow-inner">
-        <div className="flex items-center justify-between text-xs font-serif font-bold text-[#ffd166] uppercase">
-          <span>📜 Diário de Combate em Tempo Real</span>
-          <span className="text-[10px] text-gray-400 font-sans font-normal lowercase">
-            {combat.combatLog.length} eventos registrados
-          </span>
-        </div>
-
-        <div className="max-h-36 overflow-y-auto space-y-1 pr-1 scrollbar-thin font-mono text-[11px]">
-          {combat.combatLog.map((log) => {
-            const colorClass = 
-              log.type === 'ataque' ? 'text-amber-200 border-l-2 border-amber-400 bg-amber-950/20' :
-              log.type === 'dano' ? 'text-red-300 border-l-2 border-red-500 bg-red-950/20' :
-              log.type === 'cura' ? 'text-emerald-300 border-l-2 border-emerald-400 bg-emerald-950/20' :
-              log.type === 'magia' ? 'text-cyan-200 border-l-2 border-cyan-400 bg-cyan-950/20' :
-              log.type === 'condicao' ? 'text-purple-300 border-l-2 border-purple-400 bg-purple-950/20' :
-              'text-gray-300 border-l-2 border-gray-500 bg-white/5';
-
-            return (
-              <div key={log.id} className={`p-1.5 pl-2 rounded-r ${colorClass} flex items-start gap-1.5 leading-snug`}>
-                <span className="text-gray-500 text-[10px] whitespace-nowrap">{log.time}</span>
-                <span className="flex-1">{log.text}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
       {/* BANNER DE CONCLUSÃO DO CONFRONTO / RETIRADA (IDÊNTICO AO DE FERREN) */}
       <div className="bg-gradient-to-r from-[#264653]/90 via-[#2a9d8f]/40 to-[#264653]/90 border border-[#2a9d8f]/60 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
